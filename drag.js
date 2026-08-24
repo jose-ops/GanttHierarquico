@@ -78,10 +78,11 @@ function attachBarDrag(bar, t, hl, hr, fill, knob, pct){
   }
 
   bar.addEventListener('mousedown', (e)=>{
+    if(e.ctrlKey) return;            // Ctrl+arrasto faz pan, não move a barra
     if(e.target===hl || e.target===hr || e.target===knob) return;
     startDrag('move', e);
   });
-  hl.addEventListener('mousedown', (e)=> startDrag('resize-l', e));
-  hr.addEventListener('mousedown', (e)=> startDrag('resize-r', e));
-  knob.addEventListener('mousedown', (e)=> startProgressDrag(e));
+  hl.addEventListener('mousedown', (e)=>{ if(e.ctrlKey) return; startDrag('resize-l', e); });
+  hr.addEventListener('mousedown', (e)=>{ if(e.ctrlKey) return; startDrag('resize-r', e); });
+  knob.addEventListener('mousedown', (e)=>{ if(e.ctrlKey) return; startProgressDrag(e); });
 }

@@ -307,3 +307,18 @@ function render(){
     initialScrollDone = true;
   }
 }
+
+/* centraliza a view em um dia (índice a partir de min) */
+function scrollToDay(idx){
+  const sw = document.getElementById('scrollwrap');
+  const x = 360 + idx*dayWidth + dayWidth/2;
+  sw.scrollLeft = Math.max(0, x - sw.clientWidth/2);
+}
+
+/* volta a visualização para o dia de hoje */
+function scrollToToday(){
+  const {min} = getRange();
+  const today = new Date(); today.setHours(0,0,0,0);
+  const idx = dayDiff(min, today);
+  if(idx>=0) scrollToDay(idx);
+}

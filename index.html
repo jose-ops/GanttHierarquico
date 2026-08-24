@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gantt Hierárquico</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+
+  <div class="toolbar">
+    <h1><span class="logo">SRM</span>Gantt Hierárquico - ATA Reunião</h1>
+    <div class="sep"></div>
+    <button class="btn" id="expandAll">▾ Expandir tudo</button>
+    <button class="btn" id="collapseAll">▸ Recolher tudo</button>
+    <div class="sep"></div>
+    <div class="zoomgroup">
+      <button id="zoomOut">−</button>
+      <span class="lvl" id="zoomLvl">36px</span>
+      <button id="zoomIn">+</button>
+    </div>
+    <div class="legend">
+      <div class="lg-item"><span class="dot" style="background:var(--epic)"></span>Pai</div>
+      <div class="lg-item"><span class="dot" style="background:var(--story)"></span>Filho</div>
+      <div class="lg-item"><span class="dot" style="background:var(--task)"></span>Filho do filho/Alguma infomação</div>
+      <div class="lg-item"><span class="dot" style="background:var(--bug)"></span>Aviso/Bug/Informação importante</div>
+    </div>
+  </div>
+
+
+  <div class="hint">
+    <span class="ic">✋</span>
+    <span><b>Arraste</b> uma tarefa pelo nome para vinculá-la como filha (solte na faixa <b>“Nível superior”</b> para
+      desvincular). Na timeline, <b>arraste a barra</b> para mover datas, puxe as bordas para redimensionar e arraste o
+      <b>knob branco</b> para alterar o progresso. O progresso das tarefas pai é calculado automaticamente a partir dos
+      filhos.</span>
+  </div>
+
+  <!-- Adicionar tarefa -->
+  <div class="addtask">
+     <button id="abrirModal">+</button>
+  </div>
+
+  <!-- Estrutura do Modal -->
+  <div id="meuModal" class="modal">
+    <div class="modal-conteudo">
+      <span class="fechar">×</span>
+      <p>Este é um modal simples!</p>
+    </div>
+  </div>
+
+
+  <!-- <div class="selectiontask">
+   <select class="tpTask">
+     <optgroup label="Tarefas">
+       <option value="epic">Pai</option>
+       <option value="story">Filho</option>
+       <option value="task">Filho do filho/Alguma infomação</option>
+       <option value="bug">Aviso/Bug/Informação importante</option>
+
+   </select>
+</div> -->
+
+  <div class="scrollwrap" id="scrollwrap">
+    <div class="grid" id="grid"></div>
+  </div>
+
+  <script src="data.js"></script>
+  <script src="date.js"></script>
+  <script src="tree.js"></script>
+  <script src="render.js"></script>
+  <script src="drag.js"></script>
+  <script src="toolbar.js"></script>
+</body>
+
+</html>

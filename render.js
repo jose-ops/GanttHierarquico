@@ -106,6 +106,25 @@ function render(){
     chip.textContent = TYPE_LABEL[t.type];
     tc.appendChild(chip);
 
+    // badges de mensagens/avisos (canto superior esquerdo do chip)
+    const msgs = Array.isArray(t.messages) ? t.messages : [];
+    if(msgs.length){
+      const counts = {};
+      msgs.forEach(m=> counts[m.kind] = (counts[m.kind]||0)+1);
+      const bWrap = document.createElement('div');
+      bWrap.className = 'msg-badges';
+      Object.keys(counts).forEach(kind=>{
+        const k = MSG_KINDS[kind] || MSG_KINDS.info;
+        const b = document.createElement('span');
+        b.className = 'msg-badge ' + kind;
+        b.textContent = counts[kind];
+        b.title = 'Mensagens:\n' + msgs.filter(m=>m.kind===kind).map(m=> '• ' + m.text).join('\n');
+        b.onclick = (e)=>{ e.stopPropagation(); openTaskModal({mode:'edit', taskId:t.id}); };
+        bWrap.appendChild(b);
+      });
+      chip.appendChild(bWrap);
+    }
+
     const nm = document.createElement('div');
     nm.className='name';
     nm.textContent = t.name;
@@ -140,6 +159,23 @@ function render(){
       avWrap.appendChild(av);
     });
     tc.appendChild(avWrap);
+
+    // ações da linha (aparecem no hover)
+    const acts = document.createElement('div');
+    acts.className = 'row-actions';
+    const addBtn = document.createElement('button');
+    addBtn.className = 'row-btn add';
+    addBtn.title = 'Adicionar subtarefa';
+    addBtn.textContent = '＋';
+    addBtn.onclick = (e)=>{ e.stopPropagation(); openTaskModal({mode:'add', parentId:t.id}); };
+    const editBtn = document.createElement('button');
+    editBtn.className = 'row-btn edit';
+    editBtn.title = 'Editar tarefa';
+    editBtn.textContent = '✎';
+    editBtn.onclick = (e)=>{ e.stopPropagation(); openTaskModal({mode:'edit', taskId:t.id}); };
+    acts.appendChild(addBtn);
+    acts.appendChild(editBtn);
+    tc.appendChild(acts);
 
     // drag events (reparenting)
     tc.addEventListener('dragstart', (e)=>{
@@ -214,6 +250,7 @@ function render(){
     bar.appendChild(hl); bar.appendChild(hr);
 
     attachBarDrag(bar, t, hl, hr, fill, knob, pct);
+    bar.addEventListener('dblclick', (e)=>{ e.stopPropagation(); openTaskModal({mode:'edit', taskId:t.id}); });
     grid.appendChild(bar);
   });
 

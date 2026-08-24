@@ -56,3 +56,16 @@ function reparent(taskId, newParentId){
   }
   render();
 }
+
+function nextId(){
+  return tasks.reduce((m,t)=>Math.max(m,t.id),0)+1;
+}
+
+function deleteTask(id){
+  const toRemove = new Set();
+  (function collect(i){ toRemove.add(i); children(i).forEach(c=>collect(c.id)); })(id);
+  for(let i=tasks.length-1;i>=0;i--){
+    if(toRemove.has(tasks[i].id)) tasks.splice(i,1);
+  }
+  render();
+}

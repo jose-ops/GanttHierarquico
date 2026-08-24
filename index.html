@@ -12,10 +12,12 @@
 
   <div class="toolbar">
     <h1><span class="logo">SRM</span>Gantt Hierárquico - ATA Reunião</h1>
-    <div class="sep"></div>
-    <button class="btn" id="expandAll">▾ Expandir tudo</button>
-    <button class="btn" id="collapseAll">▸ Recolher tudo</button>
-    <div class="sep"></div>
+  <div class="sep"></div>
+  <button class="btn" id="expandAll">▾ Expandir tudo</button>
+  <button class="btn" id="collapseAll">▸ Recolher tudo</button>
+  <div class="sep"></div>
+  <button class="btn primary" id="addTask">＋ Adicionar tarefa</button>
+  <div class="sep"></div>
     <div class="zoomgroup">
       <button id="zoomOut">−</button>
       <span class="lvl" id="zoomLvl">36px</span>
@@ -29,7 +31,6 @@
     </div>
   </div>
 
-
   <div class="hint">
     <span class="ic">✋</span>
     <span><b>Arraste</b> uma tarefa pelo nome para vinculá-la como filha (solte na faixa <b>“Nível superior”</b> para
@@ -38,41 +39,17 @@
       filhos.</span>
   </div>
 
-  <!-- Adicionar tarefa -->
-  <div class="addtask">
-     <button id="abrirModal">+</button>
-  </div>
-
-  <!-- Estrutura do Modal -->
-  <div id="meuModal" class="modal">
-    <div class="modal-conteudo">
-      <span class="fechar">×</span>
-      <p>Este é um modal simples!</p>
-    </div>
-  </div>
-
-
-  <!-- <div class="selectiontask">
-   <select class="tpTask">
-     <optgroup label="Tarefas">
-       <option value="epic">Pai</option>
-       <option value="story">Filho</option>
-       <option value="task">Filho do filho/Alguma infomação</option>
-       <option value="bug">Aviso/Bug/Informação importante</option>
-
-   </select>
-</div> -->
-
   <div class="scrollwrap" id="scrollwrap">
-    <div class="grid" id="grid"></div>
+    <div class="grid" id="grid"></div> 
   </div>
 
-  <script src="data.js"></script>
-  <script src="date.js"></script>
-  <script src="tree.js"></script>
-  <script src="render.js"></script>
-  <script src="drag.js"></script>
-  <script src="toolbar.js"></script>
+<script src="data.js"></script>
+<script src="date.js"></script>
+<script src="tree.js"></script>
+<script src="render.js"></script>
+<script src="drag.js"></script>
+<script src="ui.js"></script>
+<script src="toolbar.js"></script>
 </body>
 
 </html>

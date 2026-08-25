@@ -204,6 +204,12 @@ body{display:flex;flex-direction:column;overflow:hidden;}
 
 svg.connectors{position:absolute;top:0;left:0;z-index:3;pointer-events:none;}
 
+/* ---------- Web Components (display) ---------- */
+gantt-app{display:flex;flex-direction:column;height:100%;}
+gantt-chart{display:block;}
+gantt-modal{display:block;}
+gantt-toolbar{display:flex;}
+
 /* ---------- Message badges (tabler.IO style) ---------- */
 .type-chip{position:relative;}
 .msg-badges{

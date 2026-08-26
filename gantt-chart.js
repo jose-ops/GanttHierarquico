@@ -43,16 +43,35 @@
     _openModal(opts){
       this.dispatchEvent(new CustomEvent('gantt-open-modal', {detail: opts, bubbles: true}));
     }
+    _toast(msg){
+      this.dispatchEvent(new CustomEvent('gantt-toast', {detail: msg, bubbles: true}));
+    }
 
     /* ---- render principal ---- */
     renderChart(){
       const grid = this._grid;
+      // preserva o foco no filtro de busca caso o render ocorra durante a digitação
+      const refocusFilter = !!(grid.querySelector && grid.querySelector('input.filter-input') === document.activeElement);
       grid.innerHTML = '';
       const {min,max} = S.getRange();
       const numDays = S.dayDiff(min,max)+1;
       const flat = S.flatten();
-      const N = flat.length;
-      S.rollupProgress();
+      let rows = flat;
+      if(this._filterRaw){
+        const f = this._filterRaw.trim().toLowerCase();
+        const visible = new Set();
+        const visit = (id)=>{
+          const t = S.findTask(id);
+          let ok = t.name.toLowerCase().includes(f);
+          S.children(id).forEach(c=>{ if(visit(c.id)) ok = true; });
+          if(ok) visible.add(id);
+          return ok;
+        };
+        S.children(null).forEach(r=> visit(r.id));
+        rows = flat.filter(r=> visible.has(r.task.id));
+      }
+      const N = rows.length;
+      S.recompute();
 
       grid.style.gridTemplateColumns = `var(--tree-w) repeat(${numDays}, ${S.getDayWidth()}px)`;
       grid.style.gridTemplateRows = `28px 28px 34px repeat(${N}, var(--row-h))`;
@@ -60,11 +79,23 @@
       const today = new Date(); today.setHours(0,0,0,0);
       const todayIdx = S.dayDiff(min, today);
 
-      // canto superior esquerdo
+      // canto superior esquerdo (título + filtro de busca)
       const corner = document.createElement('div');
       corner.className = 'head-corner';
-      corner.textContent = `Tarefas (${S.getTasks().length})`;
+      const title = document.createElement('span');
+      title.className = 'corner-title';
+      title.textContent = `Tarefas (${S.getTasks().length})`;
+      const input = document.createElement('input');
+      input.type = 'text';
+      input.className = 'filter-input';
+      input.placeholder = 'Buscar…';
+      input.value = this._filterRaw || '';
+      input.addEventListener('input', e=>{ this._filterRaw = e.target.value; this.renderChart(); });
+      input.addEventListener('keydown', e=> e.stopPropagation());
+      input.addEventListener('mousedown', e=> e.stopPropagation());
+      corner.append(title, input);
       grid.appendChild(corner);
+      if(refocusFilter){ input.focus(); const v = input.value; input.setSelectionRange(v.length, v.length); }
 
       // cabeçalho de mês
       let dayCursor = 0;
@@ -86,7 +117,7 @@
         dayCursor += span;
       }
 
-      // cabeçalho de dias
+      // cabeçalho de dia
       for(let i=0;i<numDays;i++){
         const d = S.addDays(min,i);
         const isWeekend = d.getDay()===0 || d.getDay()===6;
@@ -114,7 +145,7 @@
       grid.appendChild(dz);
 
       const rowMeta = {};
-      flat.forEach((item, rowIndex) => {
+      rows.forEach((item, rowIndex) => {
         const t = item.task;
         const gridRow = 4 + rowIndex;
         rowMeta[t.id] = {rowIndex, depth:item.depth};
@@ -180,7 +211,7 @@
       svg.setAttribute('class','connectors');
       svg.setAttribute('width', totalW);
       svg.setAttribute('height', totalH);
-      flat.forEach(item=>{
+      rows.forEach(item=>{
         const t = item.task;
         if(t.parentId===null) return;
         const pm = rowMeta[t.parentId], cm = rowMeta[t.id];
@@ -258,6 +289,7 @@
       const avWrap = document.createElement('div'); avWrap.className='avatars';
       assignees.forEach((a,i)=>{
         const av = document.createElement('div'); av.className='avatar'+(i>0?' stacked':''); av.textContent=a; av.title=a;
+        av.style.background = S.avatarColor(a);
         avWrap.appendChild(av);
       });
       tc.appendChild(avWrap);
@@ -300,6 +332,11 @@
       const S = window.GanttStore;
       const chart = this;
       function startDrag(mode, e){
+        if(S.hasChildren(t.id) && t.parentId === null){
+          e.preventDefault();
+          chart._toast('As datas da Tarefa Pai são calculadas automaticamente a partir das Filhas.');
+          return;
+        }
         e.preventDefault(); e.stopPropagation();
         const startX = e.clientX;
         const origStart = S.parseDate(t.start);
@@ -338,6 +375,7 @@
           document.removeEventListener('mouseup', onUp);
           bar.style.outline = '';
           if(bar.dataset.pendingStart){
+            S.snapshot();
             t.start = bar.dataset.pendingStart;
             t.end = bar.dataset.pendingEnd;
             delete bar.dataset.pendingStart; delete bar.dataset.pendingEnd;
@@ -348,8 +386,14 @@
         document.addEventListener('mouseup', onUp);
       }
       function startProgressDrag(e){
+        if(S.hasChildren(t.id) && t.parentId === null){
+          e.preventDefault();
+          chart._toast('O progresso da Tarefa Pai é calculado automaticamente (média ponderada das Filhas).');
+          return;
+        }
         e.preventDefault(); e.stopPropagation();
         const rect = bar.getBoundingClientRect();
+        const origProgress = t.progress;
         fill.style.transition = 'none';
         function onMove(ev){
           let p = Math.round(((ev.clientX - rect.left)/rect.width)*100);
@@ -360,6 +404,7 @@
         function onUp(){
           document.removeEventListener('mousemove', onMove);
           document.removeEventListener('mouseup', onUp);
+          if(t.progress !== origProgress) S.snapshot();
           chart.renderChart();
         }
         document.addEventListener('mousemove', onMove);

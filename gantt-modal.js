@@ -33,6 +33,7 @@
               <label class="fld">Início <input id="f_start" type="date"></label>
               <label class="fld">Fim <input id="f_end" type="date"></label>
             </div>
+            <div class="parent-note" id="parentNote" hidden>⚠️ Esta é uma Tarefa Pai: as datas e o progresso são calculados automaticamente a partir das Tarefas Filhas e não podem ser editados diretamente.</div>
             <label class="fld">Responsáveis (separados por vírgula)
               <input id="f_assignee" type="text" placeholder="Ex.: AC, MP, JS" autocomplete="off">
             </label>
@@ -104,9 +105,27 @@
                 : (t && t.parentId!=null) ? String(t.parentId) : '';
 
       this.querySelector('#modalDelete').style.display = t ? 'flex' : 'none';
+
+      // Tarefa Pai: datas/progresso são derivados — bloqueia edição direta // *******26/08/2026 alterar!!!
+      const isParent = !!(t && S.hasChildren(t.id) && t.parentId === null);
+      const fStart = this.querySelector('#f_start');
+      const fEnd = this.querySelector('#f_end');
+      const fProg = this.querySelector('#f_progress');
+      const note = this.querySelector('#parentNote');
+      note.hidden = !isParent;
+      fStart.disabled = isParent;
+      fEnd.disabled = isParent;
+      fProg.disabled = isParent;
+      const warn = ()=>{ if(isParent) this._toast('As datas e o progresso do Pai dependem estritamente do cronograma das Filhas.'); };
+      fStart.onclick = warn; fEnd.onclick = warn; fProg.onclick = warn;
+ 
       this._renderMsgList();
       this.classList.add('open');
       setTimeout(()=> this.querySelector('#f_name').focus(), 30);
+    }
+
+    _toast(msg){
+      this.dispatchEvent(new CustomEvent('gantt-toast', {detail: msg, bubbles: true}));
     }
 
     close(){
@@ -114,7 +133,7 @@
       this._state = null;
     }
 
-    _renderMsgList(){
+    _renderMsgList(){ 
       const list = this.querySelector('#msgList');
       list.innerHTML = '';
       if(!this._state.messages.length){ list.innerHTML = '<div class="msg-empty">Nenhuma mensagem ainda.</div>'; return; }
@@ -132,7 +151,7 @@
       });
     }
 
-    _addMessage(){
+    _addMessage(){ /// banco
       const kind = this.querySelector('#m_kind').value;
       const text = this.querySelector('#m_text').value.trim();
       if(!text) return;
@@ -142,7 +161,7 @@
       this.querySelector('#m_text').focus();
     }
 
-    _save(){
+    _save(){  // banco 
       const name = this.querySelector('#f_name').value.trim();
       if(!name){ this.querySelector('#f_name').focus(); return; }
       let start = this.querySelector('#f_start').value;
@@ -158,15 +177,23 @@
       const parentVal = this.querySelector('#f_parent').value;
       const parentId = parentVal ? parseInt(parentVal,10) : null;
 
+      // Só o "pai de todos" (raiz) preserva datas/progresso derivados.
+      const isParentEdit = this._state.mode==='edit' && this._state.taskId!=null && (()=>{ const t=S.findTask(this._state.taskId); return t && S.hasChildren(t.id) && t.parentId===null; })();
+      const data = { name, type, progress, assignee, parentId, messages: this._state.messages };
+      if(!isParentEdit){
+        data.start = start;
+        data.end = end;
+      }
+
       if(this._state.mode==='edit' && this._state.taskId!=null){
-        S.updateTask(this._state.taskId, { name, type, start, end, progress, assignee, parentId, messages: this._state.messages });
+        S.updateTask(this._state.taskId, data);
       } else {
-        S.addTask({ parentId, name, type, start, end, progress, assignee, messages: this._state.messages });
+        S.addTask(Object.assign({ parentId, start, end }, data));
       }
       this.close();
     }
 
-    _delete(){
+    _delete(){ // banco
       if(this._state && this._state.taskId!=null){
         const id = this._state.taskId;
         this.close();

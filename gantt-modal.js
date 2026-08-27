@@ -180,6 +180,7 @@
     }
 
     _openRel(){
+      this._relStatusFilter = 'todos';
       this._renderRelTree();
       this.querySelector('#relOverlay').hidden = false;
     }
@@ -260,9 +261,30 @@
         if(leaves.length && leaves.every(l=> l.progress >= 100)) return 'concluido';
         return 'em_andamento';
       }
+      // status de uma folha (usado na filtragem)
+      function leafStatusOf(t){
+        if(isLate(t)) return 'atrasado';
+        if(t.progress >= 100) return 'concluido';
+        return 'em_andamento';
+      }
 
       const body = this.querySelector('#relBody');
       body.innerHTML = '';
+
+      // filtro por status
+      const filterRow = document.createElement('div');
+      filterRow.className = 'rel-filter';
+      filterRow.innerHTML = `<label>Filtrar por status:
+        <select id="relStatusFilter">
+          <option value="todos">Todos</option>
+          <option value="atrasado">Atrasado</option>
+          <option value="concluido">Concluído</option>
+          <option value="em_andamento">Em andamento</option>
+        </select></label>`;
+      body.appendChild(filterRow);
+      const sel = filterRow.querySelector('#relStatusFilter');
+      sel.value = this._relStatusFilter || 'todos';
+      sel.addEventListener('change', e=>{ this._relStatusFilter = e.target.value; this._renderRelTree(); });
 
       // legenda da regra exibida no topo do painel
       const legend = document.createElement('div');
@@ -305,14 +327,28 @@
 
       const build = (id, isRoot)=>{
         const c = S.findTask(id);
+        const kids = S.children(id);
+        // filtra folhas por status; grupo fica visível se tiver algum filho visível
+        const filt = this._relStatusFilter || 'todos';
+        const visibleKids = [];
+        kids.forEach(ch=>{
+          const kn = build(ch.id, false);
+          if(kn) visibleKids.push(kn);
+        });
+        const isLeaf = kids.length === 0;
+        let show = true;
+        if(filt !== 'todos'){
+          if(isLeaf) show = leafStatusOf(c) === filt;
+          else show = visibleKids.length > 0;
+        }
+        if(!show && !isRoot) return null;   // a raiz sempre permanece visível (contexto)
         const node = document.createElement('div');
         node.className = 'rel-node';
         node.appendChild(makeCard(c, isRoot));
-        const kids = S.children(id);
-        if(kids.length){
+        if(visibleKids.length){
           const kidsWrap = document.createElement('div');
           kidsWrap.className = 'rel-kids';
-          kids.forEach(ch=> kidsWrap.appendChild(build(ch.id, false)));
+          visibleKids.forEach(k=> kidsWrap.appendChild(k));
           node.appendChild(kidsWrap);
         }
         return node;

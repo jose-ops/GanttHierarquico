@@ -19,6 +19,7 @@
         </div>
         <gantt-chart></gantt-chart>
         <gantt-modal id="modal"></gantt-modal>
+        <gantt-fab></gantt-fab>
         <div class="toast-host"></div>`;
 
       const modal = this.querySelector('#modal');

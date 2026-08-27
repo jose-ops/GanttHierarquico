@@ -1,5 +1,7 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
 
+[hidden]{display:none !important;}
+
 :root{
   --ink:#1B1F3B;
   --ink-soft:#5B6178;
@@ -315,3 +317,54 @@ gantt-toolbar{display:flex;}
 .btn.danger{background:transparent;border-color:var(--today);color:var(--today);}
 .btn.danger:hover{background:var(--today);color:#fff;}
 .btn.danger{margin-right:auto;}
+.btn.small{padding:5px 11px;font-size:11.5px;}
+.children-panel{border:1px dashed var(--border-strong);border-radius:9px;padding:12px;background:#FAFAFE;}
+.children-head{display:flex;align-items:center;justify-content:space-between;font-size:12px;font-weight:700;color:var(--ink);margin-bottom:8px;}
+.children-body{display:flex;flex-direction:column;gap:8px;}
+.child-row{border:1px solid var(--border);border-radius:8px;padding:8px 10px;background:#fff;}
+.child-top{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:12px;}
+.child-name{font-weight:700;color:var(--ink);}
+.child-type{font-size:9.5px;font-weight:700;color:#fff;text-transform:uppercase;padding:2px 6px;border-radius:5px;letter-spacing:.03em;}
+.child-range{font-family:'JetBrains Mono',monospace;font-size:10.5px;color:var(--ink-faint);}
+.child-prog{font-size:11px;font-weight:700;color:var(--ink-soft);}
+.child-status{font-size:10.5px;font-weight:700;color:var(--accent);}
+.child-status.warn{color:var(--today);}
+.child-status.st-atrasado{color:#ef4444;}
+.child-status.st-concluido{color:#22c55e;}
+.child-status.st-em_andamento{color:#f59e0b;}
+
+/* legenda da regra de status de grupo (modal "Ver filhas e relacionamentos") */
+.rel-legend{font-size:11px;line-height:1.5;color:var(--ink-soft);background:#F4F5FF;border:1px solid var(--border);border-radius:9px;padding:9px 11px;margin-bottom:13px;display:flex;flex-direction:column;gap:2px;}
+.rel-legend b{color:var(--ink);}
+.rel-legend .dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px;vertical-align:middle;}
+.rel-legend .dot.st-atrasado{background:#ef4444;}
+.rel-legend .dot.st-concluido{background:#22c55e;}
+.rel-legend .dot.st-em_andamento{background:#f59e0b;}
+.child-msgs{margin-top:7px;padding-top:7px;border-top:1px solid var(--border);display:flex;flex-direction:column;gap:4px;}
+.child-msg{font-size:11.5px;color:var(--ink-soft);display:flex;align-items:center;gap:6px;}
+.child-msg .msg-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+
+/* segundo modal: filhas e relacionamentos (árvore visual) */
+.rel-overlay{position:fixed;inset:0;z-index:60;display:flex;align-items:center;justify-content:center;background:rgba(20,23,40,.45);padding:24px;}
+.rel-modal{width:min(580px,100%);max-height:84vh;display:flex;flex-direction:column;background:var(--surface);border:1px solid var(--border-strong);border-radius:14px;box-shadow:0 24px 60px rgba(0,0,0,.32);overflow:hidden;animation:pop .18s ease;}
+.rel-body{padding:16px 18px;overflow:auto;}
+.rel-tree{font-size:12px;}
+.rel-kids{margin-left:11px;padding-left:13px;border-left:1.5px solid var(--border-strong);}
+.rel-node{position:relative;margin-top:12px;}
+.rel-node:first-child{margin-top:0;}
+.rel-node::before{content:'';position:absolute;top:20px;left:-13px;width:13px;border-top:1.5px solid var(--border-strong);}
+.rel-card{border:1px solid var(--border);border-radius:9px;padding:9px 11px;background:#fff;}
+.rel-card.is-root{border-color:var(--accent);background:#F4F5FF;box-shadow:0 0 0 3px var(--accent-soft);}
+
+/* botão flutuante estilo JIRA (navegação de datas) */
+.fab{position:fixed;right:18px;bottom:18px;z-index:80;display:flex;flex-direction:column;align-items:flex-end;gap:10px;font-family:inherit;}
+.fab-panel{width:172px;background:var(--surface);border:1px solid var(--border-strong);border-radius:14px;box-shadow:0 16px 40px rgba(27,31,59,.22);padding:12px;display:flex;flex-direction:column;gap:8px;animation:pop .16s ease;opacity: 0.8;}
+.fab-head{display:flex;align-items:center;justify-content:space-between;font-size:12px;font-weight:700;color:var(--ink-soft);margin-bottom:2px;}
+.fab-head button{border:none;background:var(--bg);width:24px;height:24px;border-radius:7px;cursor:pointer;color:var(--ink-soft);font-size:14px;line-height:1;}
+.fab-head button:hover{background:var(--border);}
+.fab-btn{display:flex;align-items:center;gap:8px;width:100%;text-align:left;border:1px solid var(--border);background:#fff;border-radius:9px;padding:9px 11px;font-size:13px;font-weight:600;color:var(--ink);cursor:pointer;transition:background .12s,border-color .12s;}
+.fab-btn:hover{background:var(--accent-soft);border-color:var(--accent);color:var(--accent-strong);}
+.fab-tab{display:none;width:48px;height:48px;border-radius:50%;border:1px solid var(--border-strong);background:var(--surface);box-shadow:0 10px 26px rgba(27,31,59,.25);font-size:21px;cursor:pointer;}
+.fab-tab:hover{background:var(--accent-soft);}
+.fab.min .fab-panel{display:none;}
+.fab.min .fab-tab{display:flex;align-items:center;justify-content:center;}

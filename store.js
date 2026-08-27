@@ -37,13 +37,13 @@ window.GanttStore = (function () {
         { kind: 'info', text: 'Aguardando aprovação do layout', date: '2026-08-26' }
       ]
     },
-    { id: 4, parentId: 3, name: 'Adm Filho 2', type: 'task', start: '2026-08-28', end: '2026-08-31', progress: 50, assignee: 'JS', collapsed: false },
+    { id: 4, parentId: 3, name: 'Adm Filho do filho', type: 'task', start: '2026-08-28', end: '2026-08-31', progress: 50, assignee: 'JS', collapsed: false },
 
     { id: 6, parentId: null, name: 'Cliente A', type: 'epic', start: '2026-09-02', end: '2026-09-16', progress: 45, assignee: 'RL', collapsed: false },
     { id: 7, parentId: 6, name: 'Filho Cliente A ', type: 'story', start: '2026-09-02', end: '2026-09-06', progress: 90, assignee: ['RL', 'TB'], collapsed: false },
     { id: 8, parentId: 6, name: 'Filho Cliente B', type: 'story', start: '2026-09-07', end: '2026-09-12', progress: 40, assignee: 'TB', collapsed: false },
-    { id: 9, parentId: 8, name: 'Filho Cliente B', type: 'task', start: '2026-09-13', end: '2026-09-16', progress: 0, assignee: ['MP', 'DF'], collapsed: false },
-    { id: 10, parentId: 6, name: 'Filho Cliente D     ', type: 'bug', start: '2026-09-09', end: '2026-09-10', progress: 60, assignee: 'RL', collapsed: false },
+    { id: 9, parentId: 8, name: 'Filho do filho B', type: 'task', start: '2026-09-13', end: '2026-09-16', progress: 0, assignee: ['MP', 'DF'], collapsed: false },
+    { id: 10, parentId: 6, name: 'alerta!', type: 'bug', start: '2026-09-09', end: '2026-09-10', progress: 60, assignee: 'RL', collapsed: false },
 
     { id: 11, parentId: null, name: 'Reunião de Desenvolvimento', type: 'epic', start: '2026-09-14', end: '2026-10-05', progress: 15, assignee: ['TB', 'DF', 'JS'], collapsed: false },
     { id: 12, parentId: 11, name: 'Autenticação e onboarding', type: 'story', start: '2026-09-14', end: '2026-09-20', progress: 30, assignee: 'DF', collapsed: false },
@@ -55,7 +55,7 @@ window.GanttStore = (function () {
     { id: 14, parentId: 13, name: 'Implementar tab bar', type: 'task', start: '2026-09-18', end: '2026-09-21', progress: 20, assignee: 'TB', collapsed: false },
     { id: 15, parentId: 13, name: 'Integração com API de conteúdo', type: 'task', start: '2026-09-21', end: '2026-09-27', progress: 0, assignee: 'DF', collapsed: false },
     {
-      id: 16, parentId: 11, name: 'Crash ao rotacionar tela', type: 'bug', start: '2026-09-22', end: '2026-09-23', progress: 0, assignee: 'DF', collapsed: false, messages: [
+      id: 16, parentId: 11, name: 'atraso', type: 'bug', start: '2026-09-22', end: '2026-09-26', progress: 0, assignee: 'DF', collapsed: false, messages: [
         { kind: 'danger', text: 'Crash reproduzido em produção (Android 13)', date: '2026-09-22' },
         { kind: 'warning', text: 'Impacta 12% dos usuários ativos', date: '2026-09-22' }
       ]
@@ -122,10 +122,13 @@ window.GanttStore = (function () {
     return out;
   }
   /* Recalcula datas/progresso usando computeEffective():
-     - SÓ o "pai de todos" (raiz, parentId === null) tem datas/progresso DERIVADOS
-       a partir de TODAS as suas folhas (descendentes). Pais intermediários mantêm
-       suas datas manuais e NÃO reagem às filhas.
-     - REGRA DO ENVELOPE (só cresce) no pai de todos:
+      - O progresso de TODO pai (raiz OU intermediário) é DERIVADO (média ponderada)
+        a partir de TODAS as suas folhas. Assim, ao alterar a % de uma folha (ex.: uma
+        "neta"), todos os pais acima (intermediário e raiz) refletem a mudança.
+      - As DATAS dos pais intermediários continuam MANUAIS (podem ser arrastados); só a
+        raiz deriva datas (com envelope). A raiz inclui as datas do pai intermediário no
+        seu envelope, reagindo quando este é movido.
+      - REGRA DO ENVELOPE (só cresce) no pai de todos:
          início  = recua SÓ SE uma folha iniciar antes do início atual do pai
          término = avança SÓ SE uma folha terminar após o término atual do pai
        Mover uma folha para DENTRO do intervalo não altera o pai. */
@@ -166,25 +169,34 @@ window.GanttStore = (function () {
       effective[node.id] = e; return e;
     }
 
-    // Aplica derivação SOMENTE nas raízes ("pai de todos"). O envelope é a UNIÃO do
-    // envelope inicial (capturado na 1ª vez = união das folhas, o "normal" exibido) e
-    // das folhas atuais. Assim o pai acompanha quando uma folha ultrapassa, mas VOLTA
-    // AO NORMAL quando a folha retorna para dentro do intervalo inicial (não fica
-    // "grudado" expandido).
-    (childrenMap['__root__'] || []).forEach(r => {
-      if (!hasChildren(r.id)) return;            // raiz sem filhas: mantém manual
-      const eff = computeEffective(r);           // envelope de TODOS os descendentes
-      if (rootBaseline === null) rootBaseline = {};
-      if (!rootBaseline[r.id]) {                 // 1ª vez: base = envelope derivado inicial
-        rootBaseline[r.id] = { start: eff.start, end: eff.end };
-      }
-      const base = rootBaseline[r.id];
-      const start = eff.start < base.start ? eff.start : base.start;
-      const end   = eff.end > base.end   ? eff.end   : base.end;
-      r.start = fmt(start);
-      r.end = fmt(end);
-      r.progress = eff.progress;
-    });
+     // Deriva o progresso de TODOS os pais (raiz E intermediários) a partir dos
+     // descendentes, para que ao alterar a % de uma folha (inclusive neta) todos os
+     // pais acima reflitam a mudança. As datas dos pais intermediários continuam
+     // manuais (podem ser arrastados); só a raiz deriva datas (com envelope).
+     tasks.forEach(p => {
+       if (!hasChildren(p.id)) return;
+       const eff = computeEffective(p);
+       p.progress = eff.progress;
+     });
+
+     // Aplica derivação de DATAS SOMENTE nas raízes ("pai de todos"). O envelope é a
+     // UNIÃO do envelope inicial (capturado na 1ª vez = união das folhas, o "normal"
+     // exibido) e das folhas atuais. Assim o pai acompanha quando uma folha ultrapassa,
+     // mas VOLTA AO NORMAL quando a folha retorna para dentro do intervalo inicial
+     // (não fica "grudado" expandido).
+     (childrenMap['__root__'] || []).forEach(r => {
+       if (!hasChildren(r.id)) return;            // raiz sem filhas: mantém manual
+       const eff = computeEffective(r);           // envelope de TODAS as folhas
+       if (rootBaseline === null) rootBaseline = {};
+       if (!rootBaseline[r.id]) {                 // 1ª vez: base = envelope derivado inicial
+         rootBaseline[r.id] = { start: eff.start, end: eff.end };
+       }
+       const base = rootBaseline[r.id];
+       const start = eff.start < base.start ? eff.start : base.start;
+       const end   = eff.end > base.end   ? eff.end   : base.end;
+       r.start = fmt(start);
+       r.end = fmt(end);
+     });
   }
   function reparent(taskId, newParentId) {
     if (taskId === newParentId) return;

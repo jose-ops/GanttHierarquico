@@ -334,7 +334,18 @@
       function startDrag(mode, e){
         if(S.hasChildren(t.id) && t.parentId === null){
           e.preventDefault();
-          chart._toast('As datas da Tarefa Pai são calculadas automaticamente a partir das Filhas.');
+          // só avisa se o usuário de fato ARRASTAR (mover o mouse); um clique ou
+          // duplo-clique (para ver informações) não dispara o alerta.
+          const onFirstMove = () => {
+            chart._toast('As datas da Tarefa Pai são calculadas automaticamente a partir das Filhas.');
+            document.removeEventListener('mousemove', onFirstMove);
+          };
+          const cleanup = () => {
+            document.removeEventListener('mousemove', onFirstMove);
+            document.removeEventListener('mouseup', cleanup);
+          };
+          document.addEventListener('mousemove', onFirstMove);
+          document.addEventListener('mouseup', cleanup);
           return;
         }
         e.preventDefault(); e.stopPropagation();
@@ -380,7 +391,7 @@
             t.end = bar.dataset.pendingEnd;
             delete bar.dataset.pendingStart; delete bar.dataset.pendingEnd;
             chart.renderChart();
-          }
+          } 
         }
         document.addEventListener('mousemove', onMove);
         document.addEventListener('mouseup', onUp);
@@ -388,7 +399,16 @@
       function startProgressDrag(e){
         if(S.hasChildren(t.id) && t.parentId === null){
           e.preventDefault();
-          chart._toast('O progresso da Tarefa Pai é calculado automaticamente (média ponderada das Filhas).');
+          const onFirstMove = () => {
+            chart._toast('O progresso da Tarefa Pai é calculado automaticamente (média ponderada das Filhas).');
+            document.removeEventListener('mousemove', onFirstMove);
+          };
+          const cleanup = () => {
+            document.removeEventListener('mousemove', onFirstMove);
+            document.removeEventListener('mouseup', cleanup);
+          };
+          document.addEventListener('mousemove', onFirstMove);
+          document.addEventListener('mouseup', cleanup);
           return;
         }
         e.preventDefault(); e.stopPropagation();

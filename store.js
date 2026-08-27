@@ -173,8 +173,10 @@ window.GanttStore = (function () {
      // descendentes, para que ao alterar a % de uma folha (inclusive neta) todos os
      // pais acima reflitam a mudança. As datas dos pais intermediários continuam
      // manuais (podem ser arrastados); só a raiz deriva datas (com envelope).
+     // Raízes com vínculo DESTRAVADO (manual=true) mantêm datas/progresso manuais.
      tasks.forEach(p => {
        if (!hasChildren(p.id)) return;
+       if (p.manual) return;                      // destravado: mantém progresso manual
        const eff = computeEffective(p);
        p.progress = eff.progress;
      });
@@ -183,9 +185,10 @@ window.GanttStore = (function () {
      // UNIÃO do envelope inicial (capturado na 1ª vez = união das folhas, o "normal"
      // exibido) e das folhas atuais. Assim o pai acompanha quando uma folha ultrapassa,
      // mas VOLTA AO NORMAL quando a folha retorna para dentro do intervalo inicial
-     // (não fica "grudado" expandido).
+     // (não fica "grudado" expandido). Raízes destravadas (manual) mantêm datas manuais.
      (childrenMap['__root__'] || []).forEach(r => {
        if (!hasChildren(r.id)) return;            // raiz sem filhas: mantém manual
+       if (r.manual) return;                      // destravado: não sobrescreve datas
        const eff = computeEffective(r);           // envelope de TODAS as folhas
        if (rootBaseline === null) rootBaseline = {};
        if (!rootBaseline[r.id]) {                 // 1ª vez: base = envelope derivado inicial
@@ -209,6 +212,24 @@ window.GanttStore = (function () {
     notify();
   }
   function nextId() { return tasks.reduce((m, t) => Math.max(m, t.id), 0) + 1; }
+  /* Verifica se TODAS as folhas descendentes estão DENTRO do período [start,end]
+     do pai. Usado ao "travar" novamente o vínculo (regra original). */
+  function descendantsWithinRange(id) {
+    const p = findTask(id);
+    if (!p) return { total: 0, outside: 0, all: true };
+    const ps = parseDate(p.start), pe = parseDate(p.end);
+    let total = 0, outside = 0;
+    (function walk(i) {
+      children(i).forEach(c => {
+        if (hasChildren(c.id)) walk(c.id);
+        else {
+          total++;
+          if (parseDate(c.start) < ps || parseDate(c.end) > pe) outside++;
+        }
+      });
+    })(id);
+    return { total, outside, all: total > 0 ? outside === 0 : true };
+  }
   function deleteTask(id) {
     snapshot();
     const toRemove = new Set();
@@ -250,6 +271,7 @@ window.GanttStore = (function () {
     parseDate, fmt, addDays, addMonths, dayDiff, getRange,
     children, hasChildren, findTask, isDescendant, flatten, recompute,
     reparent, nextId, deleteTask, addTask, updateTask, snapshot, undo,
+    descendantsWithinRange,
     getTasks, getDayWidth, setDayWidth,
     setDragTaskId, getDragTaskId,
     isScrollDone, markScrollDone, toggleCollapse

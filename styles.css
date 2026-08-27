@@ -340,6 +340,10 @@ gantt-toolbar{display:flex;}
 .rel-legend .dot.st-atrasado{background:#ef4444;}
 .rel-legend .dot.st-concluido{background:#22c55e;}
 .rel-legend .dot.st-em_andamento{background:#f59e0b;}
+
+/* linha do botão de configuração de vínculo (travar/destravar) no modal */
+.bind-row{margin:2px 0 10px;display:flex;}
+.bind-row .btn{width:100%;justify-content:center;}
 .child-msgs{margin-top:7px;padding-top:7px;border-top:1px solid var(--border);display:flex;flex-direction:column;gap:4px;}
 .child-msg{font-size:11.5px;color:var(--ink-soft);display:flex;align-items:center;gap:6px;}
 .child-msg .msg-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}

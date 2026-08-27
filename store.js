@@ -186,20 +186,27 @@ window.GanttStore = (function () {
      // exibido) e das folhas atuais. Assim o pai acompanha quando uma folha ultrapassa,
      // mas VOLTA AO NORMAL quando a folha retorna para dentro do intervalo inicial
      // (não fica "grudado" expandido). Raízes destravadas (manual) mantêm datas manuais.
-     (childrenMap['__root__'] || []).forEach(r => {
-       if (!hasChildren(r.id)) return;            // raiz sem filhas: mantém manual
-       if (r.manual) return;                      // destravado: não sobrescreve datas
-       const eff = computeEffective(r);           // envelope de TODAS as folhas
-       if (rootBaseline === null) rootBaseline = {};
-       if (!rootBaseline[r.id]) {                 // 1ª vez: base = envelope derivado inicial
-         rootBaseline[r.id] = { start: eff.start, end: eff.end };
-       }
-       const base = rootBaseline[r.id];
-       const start = eff.start < base.start ? eff.start : base.start;
-       const end   = eff.end > base.end   ? eff.end   : base.end;
-       r.start = fmt(start);
-       r.end = fmt(end);
-     });
+      (childrenMap['__root__'] || []).forEach(r => {
+        if (!hasChildren(r.id)) return;            // raiz sem filhas: mantém manual
+        if (r.manual) return;                      // destravado: não sobrescreve datas
+        const eff = computeEffective(r);           // envelope de TODAS as folhas
+        if (rootBaseline === null) rootBaseline = {};
+        if (!rootBaseline[r.id]) {
+          // 1ª vez: base = união do envelope das folhas COM as datas próprias
+          // cadastradas do pai. Assim, ao criar um filho, o pai NÃO perde a data
+          // que foi informada (o envelope só cresce a partir desse normal).
+          const rs = parseDate(r.start), re = parseDate(r.end);
+          rootBaseline[r.id] = {
+            start: eff.start < rs ? eff.start : rs,
+            end:   eff.end   > re ? eff.end   : re
+          };
+        }
+        const base = rootBaseline[r.id];
+        const start = eff.start < base.start ? eff.start : base.start;
+        const end   = eff.end > base.end   ? eff.end   : base.end;
+        r.start = fmt(start);
+        r.end = fmt(end);
+      });
   }
   function reparent(taskId, newParentId) {
     if (taskId === newParentId) return;

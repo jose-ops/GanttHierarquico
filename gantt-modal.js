@@ -359,7 +359,14 @@
       if(!S.children(root.id).length){
         tree.innerHTML = '<div class="msg-empty">Esta tarefa não possui filhas.</div>';
       } else {
-        tree.appendChild(build(root.id, true));
+        const rootNode = build(root.id, true);
+        const filt = this._relStatusFilter || 'todos';
+        if(filt !== 'todos' && !rootNode.querySelector('.rel-kids')){
+          const label = {atrasado:'Atrasado', concluido:'Concluído', em_andamento:'Em andamento'}[filt];
+          tree.innerHTML = `<div class="msg-empty">Nenhuma tarefa com status “${label}” dentro de “${escapeHtml(root.name)}”.</div>`;
+        } else {
+          tree.appendChild(rootNode);
+        }
       }
       body.appendChild(tree);
     }

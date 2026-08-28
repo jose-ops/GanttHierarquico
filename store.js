@@ -123,15 +123,15 @@ window.GanttStore = (function () {
   }
   /* Recalcula datas/progresso usando computeEffective():
       - O progresso de TODO pai (raiz OU intermediário) é DERIVADO (média ponderada)
-        a partir de TODAS as suas folhas. Assim, ao alterar a % de uma folha (ex.: uma
+        a partir de TODAS as suas filhas. Assim, ao alterar a % de uma filha (ex.: uma
         "neta"), todos os pais acima (intermediário e raiz) refletem a mudança.
       - As DATAS dos pais intermediários continuam MANUAIS (podem ser arrastados); só a
         raiz deriva datas (com envelope). A raiz inclui as datas do pai intermediário no
         seu envelope, reagindo quando este é movido.
       - REGRA DO ENVELOPE (só cresce) no pai de todos:
-         início  = recua SÓ SE uma folha iniciar antes do início atual do pai
-         término = avança SÓ SE uma folha terminar após o término atual do pai
-       Mover uma folha para DENTRO do intervalo não altera o pai. */
+         início  = recua SÓ SE uma filha iniciar antes do início atual do pai
+         término = avança SÓ SE uma filha terminar após o término atual do pai
+       Mover uma filha para DENTRO do intervalo não altera o pai. */
   // datas ORIGINAIS (cadastradas no início) de cada pai raiz — base do envelope
   let rootBaseline = null;
   function recompute() {
@@ -170,7 +170,7 @@ window.GanttStore = (function () {
     }
 
      // Deriva o progresso de TODOS os pais (raiz E intermediários) a partir dos
-     // descendentes, para que ao alterar a % de uma folha (inclusive neta) todos os
+     // descendentes, para que ao alterar a % de uma filha (inclusive neta) todos os
      // pais acima reflitam a mudança. As datas dos pais intermediários continuam
      // manuais (podem ser arrastados); só a raiz deriva datas (com envelope).
      // Raízes com vínculo DESTRAVADO (manual=true) mantêm datas/progresso manuais.
@@ -182,17 +182,17 @@ window.GanttStore = (function () {
      });
 
      // Aplica derivação de DATAS SOMENTE nas raízes ("pai de todos"). O envelope é a
-     // UNIÃO do envelope inicial (capturado na 1ª vez = união das folhas, o "normal"
-     // exibido) e das folhas atuais. Assim o pai acompanha quando uma folha ultrapassa,
-     // mas VOLTA AO NORMAL quando a folha retorna para dentro do intervalo inicial
+     // UNIÃO do envelope inicial (capturado na 1ª vez = união das filhas, o "normal"
+     // exibido) e das filhas atuais. Assim o pai acompanha quando uma filha ultrapassa,
+     // mas VOLTA AO NORMAL quando a filha retorna para dentro do intervalo inicial
      // (não fica "grudado" expandido). Raízes destravadas (manual) mantêm datas manuais.
       (childrenMap['__root__'] || []).forEach(r => {
         if (!hasChildren(r.id)) return;            // raiz sem filhas: mantém manual
         if (r.manual) return;                      // destravado: não sobrescreve datas
-        const eff = computeEffective(r);           // envelope de TODAS as folhas
+        const eff = computeEffective(r);           // envelope de TODAS as filhas
         if (rootBaseline === null) rootBaseline = {};
         if (!rootBaseline[r.id]) {
-          // 1ª vez: base = união do envelope das folhas COM as datas próprias
+          // 1ª vez: base = união do envelope das filhas COM as datas próprias
           // cadastradas do pai. Assim, ao criar um filho, o pai NÃO perde a data
           // que foi informada (o envelope só cresce a partir desse normal).
           const rs = parseDate(r.start), re = parseDate(r.end);
@@ -219,7 +219,7 @@ window.GanttStore = (function () {
     notify();
   }
   function nextId() { return tasks.reduce((m, t) => Math.max(m, t.id), 0) + 1; }
-  /* Verifica se TODAS as folhas descendentes estão DENTRO do período [start,end]
+  /* Verifica se TODAS as filhas descendentes estão DENTRO do período [start,end]
      do pai. Usado ao "travar" novamente o vínculo (regra original). */
   function descendantsWithinRange(id) {
     const p = findTask(id);

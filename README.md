@@ -9,4 +9,16 @@ Edição visual: arrastar barras para mover datas, puxar bordas para redimension
 Painel de relacionamentos: mostra filhas e descendentes da raiz, com regra de status por prioridade (Atrasado > Concluído > Em andamento) e filtro por status.
 Mensagens e avisos por tarefa (info, aviso, perigo, sucesso).
 Navegação: zoom, botão "Hoje", FAB flutuante, Ctrl+Início.
-Sem backend nem banco: o estado vive em store.js (dados de exemplo no seed). Abra index.html no navegador para usar.
+Sem backend nem banco: o estado vive em store.js (dados de exemplo no seed). 
+
+Uso
+Abra index.html no navegador (sem build, HTML/JS/CSS puros).
+
+Estrutura
+store.js — estado e lógica (datas, árvore, rollup)
+gantt-chart.js — timeline
+gantt-toolbar.js — barra de ferramentas
+gantt-modal.js — edição, mensagens e painel de relacionamentos
+gantt-fab.js — navegação flutuante
+gantt-app.js — orquestração
+styles.css — estilos

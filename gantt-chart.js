@@ -223,7 +223,8 @@
         const path = document.createElementNS('http://www.w3.org/2000/svg','path');
         path.setAttribute('d', `M ${ax} ${ay} C ${ax-14} ${ay}, ${ax-14} ${by}, ${bx-6} ${by}`);
         path.setAttribute('fill','none');
-        path.setAttribute('stroke','#C9CDEA');
+        const typeVar = {epic:'--epic', story:'--story', task:'--task', bug:'--bug'}[t.type] || '--connector';
+        path.setAttribute('stroke', getComputedStyle(document.documentElement).getPropertyValue(typeVar).trim() || '#C9CDEA');
         path.setAttribute('stroke-width','1.5');
         svg.appendChild(path);
       });

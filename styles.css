@@ -22,6 +22,7 @@
   --row-h:44px;
   --tree-w:360px;
   --radius:7px;
+  --connector:#C9CDEA;
 }
 *{box-sizing:border-box;}
 html,body{margin:0;height:100%;background:var(--bg);font-family:'Inter',system-ui,sans-serif;color:var(--ink);}

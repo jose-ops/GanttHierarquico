@@ -95,6 +95,15 @@
         };
         document.addEventListener('keydown', this._escHandler);
       }
+      // a data de início nunca pode ser maior que a data final
+      const syncDateRange = ()=>{
+        const s = this.querySelector('#f_start').value;
+        const e = this.querySelector('#f_end').value;
+        this.querySelector('#f_end').min = s;
+        this.querySelector('#f_start').max = e;
+      };
+      this.querySelector('#f_start').addEventListener('change', syncDateRange);
+      this.querySelector('#f_end').addEventListener('change', syncDateRange);
     }
 
     open(opts={}){
@@ -160,6 +169,8 @@
       fProg.disabled = locked;
       const warn = ()=>{ if(locked) this._toast('As datas e o progresso do Pai travado dependem estritamente do cronograma das Filhas.'); };
       fStart.onclick = warn; fEnd.onclick = warn; fProg.onclick = warn;
+      if(fStart.value) fEnd.min = fStart.value;
+      if(fEnd.value) fStart.max = fEnd.value;
 
       // botão de filhas/avisos/relacionamentos (só pai raiz existente)
       this.querySelector('#openRel').hidden = !isParent;
@@ -406,7 +417,11 @@
       let end = this.querySelector('#f_end').value;
       if(!start) start = S.fmt(new Date());
       if(!end) end = start;
-      if(S.parseDate(end) < S.parseDate(start)) end = start;
+      if(S.parseDate(end) < S.parseDate(start)){
+        this._toast('A data de início não pode ser maior que a data final.');
+        this.querySelector('#f_start').focus();
+        return;
+      }
       const type = this.querySelector('#f_type').value;
       let progress = parseInt(this.querySelector('#f_progress').value,10);
       if(isNaN(progress)) progress = 0;

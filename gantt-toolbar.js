@@ -10,7 +10,6 @@
         <h1><span class="logo">SRM</span>Gantt Hierárquico - ATA Reunião</h1>
         <div class="sep"></div>
         <button class="btn" id="toggleAll">▸ Recolher tudo</button>
-        <button class="btn" id="toggleTree">📋 Esconder tarefas</button>
         <div class="sep"></div>
         <button class="btn primary" id="addTask">＋ Adicionar tarefa</button>
         <div class="sep"></div>
@@ -41,10 +40,6 @@
         allBtn.textContent = allCollapsed ? '▾ Expandir tudo' : '▸ Recolher tudo';
       };
       updateAllBtn();
-      const treeBtn = this.querySelector('#toggleTree');
-      const updateTreeBtn = ()=> treeBtn.textContent = S.isTreeVisible() ? '📋 Esconder tarefas' : '📋 Mostrar tarefas';
-      updateTreeBtn();
-      treeBtn.onclick = ()=> S.setTreeVisible(!S.isTreeVisible());
       this.querySelector('#addTask').onclick = ()=> this._emit({mode:'add', parentId:null});
       this.querySelector('#goToday').onclick = ()=>{
         const chart = document.querySelector('gantt-chart');
@@ -55,7 +50,7 @@
       });
 
       // reflete o zoom atual no rótulo
-      S.subscribe(()=>{ this.querySelector('#zoomLvl').textContent = S.getDayWidth()+'px'; updateTreeBtn(); updateAllBtn(); });
+      S.subscribe(()=>{ this.querySelector('#zoomLvl').textContent = S.getDayWidth()+'px'; updateAllBtn(); });
     }
 
     _emit(detail){

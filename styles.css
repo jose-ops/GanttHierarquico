@@ -180,6 +180,19 @@ gantt-chart.tree-hidden .tree-cell,
 gantt-chart.tree-hidden .head-corner,
 gantt-chart.tree-hidden .dropzone{display:none;}
 
+/* hambúrguer lateral para mostrar/esconder a coluna de tarefas */
+.tree-toggle{
+  position:fixed;left:var(--tree-w);top:50%;transform:translateY(-50%);
+  z-index:90;width:22px;height:52px;padding:0;
+  border:1px solid var(--border-strong);border-left:none;
+  background:var(--surface);color:var(--ink-soft);cursor:pointer;
+  border-radius:0 8px 8px 0;box-shadow:0 2px 8px rgba(27,31,59,.14);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;
+  transition:left .16s ease,background .12s,color .12s;
+}
+.tree-toggle:hover{background:var(--accent-soft);color:var(--accent-strong);}
+.tree-toggle .line{width:10px;height:1.5px;background:currentColor;border-radius:1px;}
+
 /* bars */
 .bar{
   position:relative;align-self:center;height:26px;margin:0 2px;border-radius:6px;

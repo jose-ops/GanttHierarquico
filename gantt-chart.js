@@ -9,6 +9,7 @@
     connectedCallback(){
       this.className = 'scrollwrap';
       this._ensureGrid();
+      this._ensureTreeToggle();
       if(!this._subscribed){
         this._unsub = S.subscribe(()=> this.renderChart());
         this._subscribed = true;
@@ -18,6 +19,20 @@
     }
     disconnectedCallback(){
       if(this._unsub){ this._unsub(); this._unsub = null; this._subscribed = false; }
+    }
+    _ensureTreeToggle(){
+      if(this._treeToggle) return;
+      const btn = document.createElement('button');
+      btn.className = 'tree-toggle';
+      btn.title = 'Mostrar/esconder a lista de tarefas';
+      btn.innerHTML = '<span class="line"></span><span class="line"></span><span class="line"></span>';
+      btn.addEventListener('click', ()=>{
+        S.setTreeVisible(!S.isTreeVisible());
+        const chart = document.querySelector('gantt-chart');
+        if(chart) chart.scrollToToday();
+      });
+      document.body.appendChild(btn);
+      this._treeToggle = btn;
     }
     _ensureGrid(){
       if(!this._grid){
@@ -359,7 +374,7 @@
         const origStart = S.parseDate(t.start);
         const origEnd = S.parseDate(t.end);
         const rangeMin = S.getRange().min;
-        const treeW = this._treeW();
+        const treeW = chart._treeW();
         const barLeft0 = bar.getBoundingClientRect().left;
         bar.style.transition = 'none';
         function onMove(ev){
@@ -368,7 +383,11 @@
           if(mode==='move'){
             const dMin = -S.dayDiff(rangeMin, origStart);
             const dMax = S.dayDiff(origEnd, S.getRange().max);
-            const minTranslateDays = Math.ceil((treeW + S.getDayWidth() - barLeft0) / S.getDayWidth());
+            // a barra pode ir livremente até onde o mouse indicar; só não pode
+            // atravessar a coluna de tarefas (posição absoluta dentro do grid)
+            const gridLeft = bar.closest('.grid').getBoundingClientRect().left;
+            const origAbsLeft = barLeft0 - gridLeft;
+            const minTranslateDays = Math.ceil((treeW - origAbsLeft) / S.getDayWidth());
             let eff = Math.max(dMin, deltaDays);
             eff = Math.min(eff, dMax);
             eff = Math.max(eff, minTranslateDays);

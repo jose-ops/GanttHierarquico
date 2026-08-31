@@ -123,9 +123,10 @@ window.GanttStore = (function () {
     return out;
   }
   /* Recalcula datas/progresso usando computeEffective():
-      - O progresso de TODO pai (raiz OU intermediário) é DERIVADO (média ponderada)
-        a partir de TODAS as suas filhas. Assim, ao alterar a % de uma filha (ex.: uma
-        "neta"), todos os pais acima (intermediário e raiz) refletem a mudança.
+      - O progresso de TODO pai (raiz OU intermediário) é DERIVADO como MÉDIA SIMPLES
+        das % de TODAS as suas folhas. Mover ou redimensionar datas NÃO altera a % do
+        pai; apenas mudar a % de uma folha (ex.: uma "neta") recalcula todos os pais
+        acima (intermediário e raiz).
       - As DATAS dos pais intermediários continuam MANUAIS (podem ser arrastados); só a
         raiz deriva datas (com envelope). A raiz inclui as datas do pai intermediário no
         seu envelope, reagindo quando este é movido.
@@ -147,16 +148,20 @@ window.GanttStore = (function () {
       if (effective[node.id]) return effective[node.id];
       const kids = childrenMap[node.id] || [];
       if (!kids.length) {
-        const e = { start: parseDate(node.start), end: parseDate(node.end), progress: node.progress, isGroup: false };
+        const e = { start: parseDate(node.start), end: parseDate(node.end), progress: node.progress, isGroup: false, leafCount: 1 };
         effective[node.id] = e; return e;
       }
-      let minC = null, maxC = null, total = 0, weight = 0;
+      let minC = null, maxC = null, total = 0, weight = 0, leafCount = 0;
       kids.forEach(k => {
         const ke = computeEffective(k);
         if (!minC || ke.start < minC) minC = ke.start;
         if (!maxC || ke.end > maxC) maxC = ke.end;
-        const dur = dayDiff(ke.start, ke.end) + 1;
-        total += ke.progress * dur; weight += dur;
+        // progresso do grupo = MÉDIA SIMPLES das % das folhas descendentes.
+        // Mover OU redimensionar datas NÃO altera a % do pai; só a alteração da
+        // % de uma folha é que recalcula o progresso dos pais acima.
+        const n = ke.leafCount != null ? ke.leafCount : 1;
+        leafCount += n;
+        total += ke.progress * n; weight += n;
       });
       // pais intermediários têm datas MANUAIS (podem ser arrastados): inclui as datas
       // do próprio nó no envelope para que o pai raiz reaja ao movê-los.
@@ -166,7 +171,7 @@ window.GanttStore = (function () {
         if (!minC || ns < minC) minC = ns;
         if (!maxC || ne > maxC) maxC = ne;
       }
-      const e = { start: minC, end: maxC, progress: weight > 0 ? Math.max(0, Math.min(100, Math.round(total / weight))) : 0, isGroup: true };
+      const e = { start: minC, end: maxC, progress: weight > 0 ? Math.max(0, Math.min(100, Math.round(total / weight))) : 0, isGroup: true, leafCount };
       effective[node.id] = e; return e;
     }
 

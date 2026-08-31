@@ -70,6 +70,7 @@ window.GanttStore = (function () {
   let dayWidth = 36;
   let dragTaskId = null;
   let initialScrollDone = false;
+  let treeVisible = true;
 
   /* ---------- undo (pilha de snapshots) ---------- */
   let undoStack = [];
@@ -271,6 +272,8 @@ window.GanttStore = (function () {
     const t = findTask(id);
     if (t && hasChildren(t.id)) { t.collapsed = !t.collapsed; notify(); }
   }
+  function isTreeVisible() { return treeVisible; }
+  function setTreeVisible(v) { treeVisible = v; notify(); }
 
   return {
     TYPE_LABEL, DOW, MONTHS, MSG_KINDS, AVATAR_PALETTE, avatarColor,
@@ -281,6 +284,7 @@ window.GanttStore = (function () {
     descendantsWithinRange,
     getTasks, getDayWidth, setDayWidth,
     setDragTaskId, getDragTaskId,
-    isScrollDone, markScrollDone, toggleCollapse
+    isScrollDone, markScrollDone, toggleCollapse,
+    isTreeVisible, setTreeVisible
   };
 })();

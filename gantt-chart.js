@@ -29,8 +29,11 @@
     }
 
     /* ---- API de navegação ---- */
+    _treeW(){
+      return parseInt(getComputedStyle(document.documentElement).getPropertyValue('--tree-w')) || 0;
+    }
     scrollToDay(idx){
-      const x = 360 + idx*S.getDayWidth() + S.getDayWidth()/2;
+      const x = this._treeW() + idx*S.getDayWidth() + S.getDayWidth()/2;
       this.scrollLeft = Math.max(0, x - this.clientWidth/2);
     }
     scrollToToday(){
@@ -53,6 +56,8 @@
       // preserva o foco no filtro de busca caso o render ocorra durante a digitação
       const refocusFilter = !!(grid.querySelector && grid.querySelector('input.filter-input') === document.activeElement);
       grid.innerHTML = '';
+      document.documentElement.style.setProperty('--tree-w', S.isTreeVisible() ? '360px' : '0px');
+      this.classList.toggle('tree-hidden', !S.isTreeVisible());
       const {min,max} = S.getRange();
       const numDays = S.dayDiff(min,max)+1;
       const flat = S.flatten();
@@ -193,19 +198,19 @@
         const totalH = headerH + N*44;
         const line = document.createElement('div');
         line.className='today-line';
-        line.style.left = (360 + todayIdx*S.getDayWidth() + S.getDayWidth()/2)+'px';
+        line.style.left = (this._treeW() + todayIdx*S.getDayWidth() + S.getDayWidth()/2)+'px';
         line.style.height = totalH+'px';
         grid.appendChild(line);
         const flag = document.createElement('div');
         flag.className='today-flag';
-        flag.style.left = (360 + todayIdx*S.getDayWidth() + S.getDayWidth()/2)+'px';
+        flag.style.left = (this._treeW() + todayIdx*S.getDayWidth() + S.getDayWidth()/2)+'px';
         flag.textContent='HOJE';
         grid.appendChild(flag);
       }
 
       // conectores hierárquicos
       const headerH = 28+28+34;
-      const totalW = 360 + numDays*S.getDayWidth();
+      const totalW = this._treeW() + numDays*S.getDayWidth();
       const totalH = headerH + N*44;
       const svg = document.createElementNS('http://www.w3.org/2000/svg','svg');
       svg.setAttribute('class','connectors');
@@ -216,9 +221,9 @@
         if(t.parentId===null) return;
         const pm = rowMeta[t.parentId], cm = rowMeta[t.id];
         if(!pm || !cm) return;
-        const ax = 360 + pm.startIdx*S.getDayWidth() + 10;
+        const ax = this._treeW() + pm.startIdx*S.getDayWidth() + 10;
         const ay = headerH + pm.rowIndex*44 + 22;
-        const bx = 360 + cm.startIdx*S.getDayWidth() + 10;
+        const bx = this._treeW() + cm.startIdx*S.getDayWidth() + 10;
         const by = headerH + cm.rowIndex*44 + 22;
         const path = document.createElementNS('http://www.w3.org/2000/svg','path');
         path.setAttribute('d', `M ${ax} ${ay} C ${ax-14} ${ay}, ${ax-14} ${by}, ${bx-6} ${by}`);
@@ -232,8 +237,8 @@
 
       // scroll inicial para hoje (uma vez)
       if(!S.isScrollDone() && todayIdx>=0 && todayIdx<numDays){
-        const x = 360 + todayIdx*S.getDayWidth() + S.getDayWidth()/2;
-        this.scrollLeft = Math.max(0, x - 360 - S.getDayWidth()*2);
+        const x = this._treeW() + todayIdx*S.getDayWidth() + S.getDayWidth()/2;
+        this.scrollLeft = Math.max(0, x - this._treeW() - S.getDayWidth()*2);
         S.markScrollDone();
       }
     }
@@ -354,7 +359,7 @@
         const origStart = S.parseDate(t.start);
         const origEnd = S.parseDate(t.end);
         const rangeMin = S.getRange().min;
-        const treeW = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--tree-w')) || 360;
+        const treeW = this._treeW();
         const barLeft0 = bar.getBoundingClientRect().left;
         bar.style.transition = 'none';
         function onMove(ev){
@@ -456,9 +461,9 @@
         if(next === old) return;
         const rect = chart.getBoundingClientRect();
         const cursorX = e.clientX - rect.left + chart.scrollLeft;
-        const dateIdx = (cursorX - 360) / old;
+        const dateIdx = (cursorX - chart._treeW()) / old;
         S.setDayWidth(next);
-        const newX = 360 + dateIdx*next + next/2;
+        const newX = chart._treeW() + dateIdx*next + next/2;
         chart.scrollLeft = newX - (e.clientX - rect.left);
       }, {passive:false});
 

@@ -175,6 +175,11 @@ body{display:flex;flex-direction:column;overflow:hidden;}
 .day-cell{border-bottom:1px solid var(--border);border-right:1px solid #EDEEF6;}
 .day-cell.weekend{background:var(--weekend);}
 
+/* coluna de tarefas recolhida: esconde corner, dropzone e células da árvore */
+gantt-chart.tree-hidden .tree-cell,
+gantt-chart.tree-hidden .head-corner,
+gantt-chart.tree-hidden .dropzone{display:none;}
+
 /* bars */
 .bar{
   position:relative;align-self:center;height:26px;margin:0 2px;border-radius:6px;

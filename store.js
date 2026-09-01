@@ -30,6 +30,7 @@ window.GanttStore = (function () {
   /* ---------- dados de exemplo (seed) ---------- */
   let tasks = [
     { id: 1, parentId: null, name: 'Administração', type: 'epic', start: '2026-08-29', end: '2026-09-04', progress: 65, assignee: ['AC', 'MP'], collapsed: false },
+    
     { id: 2, parentId: 1, name: 'Adm Filho 1', type: 'story', start: '2026-08-24', end: '2026-08-27', progress: 100, assignee: 'MP', collapsed: false },
     {
       id: 3, parentId: 1, name: 'Adm Filho 2', type: 'story', start: '2026-08-27', end: '2026-09-01', progress: 50, assignee: ['JS', 'RL'], collapsed: false, messages: [
@@ -124,7 +125,7 @@ window.GanttStore = (function () {
   }
   /* Recalcula datas/progresso usando computeEffective():
       - O progresso de TODO pai (raiz OU intermediário) é DERIVADO como MÉDIA SIMPLES
-        das % de TODAS as suas folhas. Mover ou redimensionar datas NÃO altera a % do
+        das % de TODAS as suas filhas. Mover ou redimensionar datas NÃO altera a % do
         pai; apenas mudar a % de uma folha (ex.: uma "neta") recalcula todos os pais
         acima (intermediário e raiz).
       - As DATAS dos pais intermediários continuam MANUAIS (podem ser arrastados); só a
@@ -156,7 +157,7 @@ window.GanttStore = (function () {
         const ke = computeEffective(k);
         if (!minC || ke.start < minC) minC = ke.start;
         if (!maxC || ke.end > maxC) maxC = ke.end;
-        // progresso do grupo = MÉDIA SIMPLES das % das folhas descendentes.
+        // progresso do grupo = MÉDIA SIMPLES das % das filhas descendentes.
         // Mover OU redimensionar datas NÃO altera a % do pai; só a alteração da
         // % de uma folha é que recalcula o progresso dos pais acima.
         const n = ke.leafCount != null ? ke.leafCount : 1;

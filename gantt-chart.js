@@ -3,7 +3,7 @@
    linha do hoje e conectores) e trata zoom, pan, drag e drop. */
 (function(){
   'use strict';
-  const S = window.GanttStore;
+  const S = window.GanttStore; 
 
   class GanttChart extends HTMLElement {
     connectedCallback(){
@@ -17,6 +17,7 @@
       this._bindInteractions();
       this.renderChart();
     }
+
     disconnectedCallback(){
       if(this._unsub){ this._unsub(); this._unsub = null; this._subscribed = false; }
     }
@@ -33,7 +34,22 @@
       });
       document.body.appendChild(btn);
       this._treeToggle = btn;
+      this._updateTreeTogglePos();
     }
+
+    _updateTreeTogglePos(){
+      const btn = this._treeToggle;
+      if(!btn) return;
+      const hidden = !S.isTreeVisible();
+      btn.classList.toggle('collapsed', hidden);
+      // âncora no topo, alinhado com a primeira linha de tarefas (abaixo do cabeçalho),
+      // para nunca ficar "flutuando no meio" da tela
+      const r = this.getBoundingClientRect();
+      const headerH = 28+28+34;
+      btn.style.top = (r.top + headerH) + 'px';
+      btn.style.transform = 'none';
+    }
+
     _ensureGrid(){
       if(!this._grid){
         this._grid = document.createElement('div');
@@ -43,14 +59,17 @@
       return this._grid;
     }
 
+
     /* ---- API de navegação ---- */
     _treeW(){
       return parseInt(getComputedStyle(document.documentElement).getPropertyValue('--tree-w')) || 0;
     }
+
     scrollToDay(idx){
       const x = this._treeW() + idx*S.getDayWidth() + S.getDayWidth()/2;
       this.scrollLeft = Math.max(0, x - this.clientWidth/2);
     }
+
     scrollToToday(){
       const {min} = S.getRange();
       const today = new Date(); today.setHours(0,0,0,0);
@@ -58,14 +77,16 @@
       if(idx>=0) this.scrollToDay(idx);
     }
 
+
     _openModal(opts){
       this.dispatchEvent(new CustomEvent('gantt-open-modal', {detail: opts, bubbles: true}));
     }
+
     _toast(msg){
       this.dispatchEvent(new CustomEvent('gantt-toast', {detail: msg, bubbles: true}));
     }
 
-    /* ---- render principal ---- */
+    /* ---- render principal **ATENÇÃO** ---- */
     renderChart(){
       const grid = this._grid;
       // preserva o foco no filtro de busca caso o render ocorra durante a digitação
@@ -73,6 +94,7 @@
       grid.innerHTML = '';
       document.documentElement.style.setProperty('--tree-w', S.isTreeVisible() ? '360px' : '0px');
       this.classList.toggle('tree-hidden', !S.isTreeVisible());
+      this._updateTreeTogglePos();
       const {min,max} = S.getRange();
       const numDays = S.dayDiff(min,max)+1;
       const flat = S.flatten();
@@ -224,7 +246,7 @@
       }
 
       // conectores hierárquicos
-      const headerH = 28+28+34;
+      const headerH = 28+28+34; // altura do cabeçalho (meses + dias + dropzone)
       const totalW = this._treeW() + numDays*S.getDayWidth();
       const totalH = headerH + N*44;
       const svg = document.createElementNS('http://www.w3.org/2000/svg','svg');
@@ -348,6 +370,7 @@
       return tc;
     }
 
+
     /* ---- drag da barra (mover/redimensionar/progresso) ---- */
     _attachBarDrag(bar, t, hl, hr, fill, knob, pct){
       const S = window.GanttStore;
@@ -465,6 +488,7 @@
       knob.addEventListener('mousedown', e=>{ if(e.ctrlKey) return; startProgressDrag(e); });
     }
 
+
     /* ---- zoom (Ctrl+scroll) e pan (Ctrl+arrastar) ---- */
     _bindInteractions(){
       if(this._interactionsBound) return;
@@ -503,6 +527,7 @@
         chart.style.cursor='grabbing'; document.body.style.userSelect='none';
       });
     }
+
   }
 
   customElements.define('gantt-chart', GanttChart);

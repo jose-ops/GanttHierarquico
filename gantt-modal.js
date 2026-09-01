@@ -54,9 +54,6 @@
                  <button id="m_add" class="btn">＋ Add</button>
                </div>
              </div>
-              <div class="bind-row" id="bindRow" hidden>
-                <button id="bindToggle" class="btn" type="button">🔒 Travar vínculo com filhas</button>
-              </div>
               <button id="openRel" class="btn" type="button" hidden>🔗 Ver filhas e relacionamentos</button>
            </div>
           <div class="modal-foot">
@@ -82,7 +79,6 @@
       this.querySelector('#m_add').onclick = ()=> this._addMessage();
       this.querySelector('#m_text').addEventListener('keydown', e=>{ if(e.key==='Enter'){ e.preventDefault(); this._addMessage(); } });
       this.querySelector('#openRel').onclick = ()=> this._openRel();
-      this.querySelector('#bindToggle').onclick = ()=> this._onBindToggle();
       this.querySelector('#relClose').onclick = ()=>{ this.querySelector('#relOverlay').hidden = true; };
       this.querySelector('#relOverlay').addEventListener('mousedown', e=>{ if(e.target===this.querySelector('#relOverlay')) this.querySelector('#relOverlay').hidden = true; });
       this.addEventListener('mousedown', e=>{ if(e.target===this) this.close(); });
@@ -114,8 +110,7 @@
         taskId,
         parentId: (opts.parentId!=null) ? opts.parentId : (t ? t.parentId : null),
         messages: t && Array.isArray(t.messages) ? t.messages.map(x=>({...x})) : [],
-        progress0: t ? t.progress : 0,
-        manual: !!(t && t.manual)
+        progress0: t ? t.progress : 0
       };
 
       this.querySelector('#modalTitle').textContent = t ? 'Editar tarefa' : 'Adicionar tarefa';
@@ -143,32 +138,22 @@
 
       this.querySelector('#modalDelete').style.display = t ? 'flex' : 'none';
 
-      // Tarefa Pai (raiz): vínculo com as filhas (travado = deriva datas/progresso;
-      // destravado = manual). Botão de configuração para alternar.
+      // Tarefa Pai (raiz): as DATAS são sempre editáveis livremente ("sem trava"),
+      // desde que início <= fim. Se uma filha ultrapassar o período, o pai acompanha
+      // (envelope) com aviso. O PROGRESSO continua derivado das Filhas (média simples).
       const isParent = !!(t && S.hasChildren(t.id) && t.parentId === null);
-      const isRootCtx = isParent || (this._state.mode === 'add' && this._state.parentId == null);
-      const locked = isParent && !this._state.manual;
       const fStart = this.querySelector('#f_start');
       const fEnd = this.querySelector('#f_end');
       const fProg = this.querySelector('#f_progress');
       const note = this.querySelector('#parentNote');
-      const bindRow = this.querySelector('#bindRow');
-      const bindBtn = this.querySelector('#bindToggle');
 
-      bindRow.hidden = !isRootCtx;
-      bindBtn.textContent = this._state.manual ? '🔒 Travar vínculo com filhas' : '🔓 Destravar vínculo com filhas';
-
+      fStart.disabled = false;
+      fEnd.disabled = false;
+      fProg.disabled = isParent;
       note.hidden = !isParent;
       if(isParent){
-        note.textContent = locked
-          ? '⚠️ Tarefa Pai travada: as datas e o progresso são calculados automaticamente a partir das Filhas e não podem ser editados diretamente.'
-          : '🔓 Vínculo destravado: as datas e o progresso são manuais e NÃO são calculados a partir das Filhas.';
+        note.textContent = '✏️ Esta é uma Tarefa Pai: as datas podem ser editadas livremente, mas se uma Filha ultrapassar o período o pai acompanha. O progresso é calculado automaticamente a partir das Filhas.';
       }
-      fStart.disabled = locked;
-      fEnd.disabled = locked;
-      fProg.disabled = locked;
-      const warn = ()=>{ if(locked) this._toast('As datas e o progresso do Pai travado dependem estritamente do cronograma das Filhas.'); };
-      fStart.onclick = warn; fEnd.onclick = warn; fProg.onclick = warn;
       if(fStart.value) fEnd.min = fStart.value;
       if(fEnd.value) fStart.max = fEnd.value;
 
@@ -194,53 +179,6 @@
       this._relStatusFilter = 'todos';
       this._renderRelTree();
       this.querySelector('#relOverlay').hidden = false;
-    }
-
-    _onBindToggle(){
-      const st = this._state;
-      if(!st) return;
-      const willManual = !st.manual;   // true = vai destravar; false = vai travar
-
-      if(st.mode === 'edit' && st.taskId != null){
-        const t = S.findTask(st.taskId);
-        if(!t) return;
-        if(willManual){
-          // DESTRAVAR: libera edição manual de datas/progresso
-          t.manual = true; st.manual = true; S.notify();
-          this._toast('Vínculo destravado: as datas e o progresso desta Tarefa Pai agora são manuais e NÃO serão calculados a partir das Filhas.');
-        } else {
-          // TRAVAR de novo: exige que todas as filhas estejam DENTRO do período do pai
-          const chk = S.descendantsWithinRange(t.id);
-          if(chk.total > 0 && !chk.all){
-            this._toast('Para travar o vínculo novamente (voltar a derivar das Filhas), primeiro organize TODAS as tarefas filhas dentro do período do pai, conforme a regra original. Há ' + chk.outside + ' fora do intervalo.');
-            return; // mantém destravado
-          }
-          t.manual = false; st.manual = false; S.notify();
-          this._toast('Vínculo travado: datas e progresso voltarão a ser calculados automaticamente a partir das Filhas.');
-        }
-      } else {
-        // modo add: só define o estado futuro da nova tarefa raiz e avisa
-        st.manual = willManual;
-        if(willManual){
-          this._toast('Ao destravar o vínculo, esta nova Tarefa Pai manterá datas e progresso manuais mesmo após receber filhas.');
-        } else {
-          this._toast('Ao travar o vínculo, as datas e o progresso desta Tarefa Pai serão calculados automaticamente a partir das Filhas (regra original).');
-        }
-      }
-
-      // atualiza rótulo do botão e estado dos campos
-      const bindBtn = this.querySelector('#bindToggle');
-      bindBtn.textContent = st.manual ? '🔒 Travar vínculo com filhas' : '🔓 Destravar vínculo com filhas';
-      const lockedNow = st.mode === 'edit' && !st.manual;
-      this.querySelector('#f_start').disabled = lockedNow;
-      this.querySelector('#f_end').disabled = lockedNow;
-      this.querySelector('#f_progress').disabled = lockedNow;
-      const note = this.querySelector('#parentNote');
-      if(note && !note.hidden){
-        note.textContent = lockedNow
-          ? '⚠️ Tarefa Pai travada: as datas e o progresso são calculados automaticamente a partir das Filhas e não podem ser editados diretamente.'
-          : '🔓 Vínculo destravado: as datas e o progresso são manuais e NÃO são calculados a partir das Filhas.';
-      }
     }
 
     _renderRelTree(){
@@ -430,19 +368,35 @@
       const parentVal = this.querySelector('#f_parent').value;
       const parentId = parentVal ? parseInt(parentVal,10) : null;
 
-      // Só o "pai de todos" (raiz) travado preserva datas/progresso derivados;
-      // destravado (manual) ou tarefa normal permite edição.
-      const isParentEdit = this._state.mode==='edit' && this._state.taskId!=null && (()=>{ const t=S.findTask(this._state.taskId); return t && S.hasChildren(t.id) && t.parentId===null; })();
-      const locked = isParentEdit && !this._state.manual;
-      const data = { name, type, assignee, parentId, messages: this._state.messages };
-      if(!locked){
-        data.start = start;
-        data.end = end;
-        data.progress = progress;
+      const data = { name, type, assignee, parentId, start, end, progress, messages: this._state.messages };
+
+      // Tarefa filha/neta que ultrapassa o período da raiz ("pai de todos"): o pai
+      // acompanha (regra do envelope) e o usuário é avisado.
+      if(parentId !== null){
+        const root = S.rootAncestorOf(parentId);
+        if(root){
+          const rs = S.parseDate(root.start), re = S.parseDate(root.end);
+          const ss = S.parseDate(start), ee = S.parseDate(end);
+          const warns = [];
+          if(ss < rs) warns.push(`início (${start}) é anterior ao início (${root.start}) da Tarefa Pai`);
+          if(ee > re) warns.push(`fim (${end}) é posterior ao fim (${root.end}) da Tarefa Pai`);
+          if(warns.length){
+            this._toast('⚠️ O ' + warns.join(' e o ') + ` “${root.name}”. O período do pai será ajustado para acompanhar.`);
+          }
+        }
+      } else if(this._state.mode==='edit' && this._state.taskId!=null){
+        // edição manual de datas de uma raiz: se alguma descendente ultrapassar o
+        // período informado, o pai acompanha (envelope) — avisa para não parecer que
+        // a edição "não pegou".
+        const rt = S.findTask(this._state.taskId);
+        if(rt && rt.parentId === null && S.hasChildren(rt.id)){
+          const dr = S.descendantsRange(rt.id);
+          const ss = S.parseDate(start), ee = S.parseDate(end);
+          if(dr.start && (dr.start < ss || dr.end > ee)){
+            this._toast('⚠️ Há filhas fora do período informado (“' + rt.name + '”). O pai acompanhará o cronograma das Filhas.');
+          }
+        }
       }
-      // flag de vínculo: relevante só para tarefas raiz
-      const isRootCtx = isParentEdit || (this._state.mode==='add' && parentId == null);
-      if(isRootCtx) data.manual = !!this._state.manual;
 
       if(this._state.mode==='edit' && this._state.taskId!=null){
         S.updateTask(this._state.taskId, data);

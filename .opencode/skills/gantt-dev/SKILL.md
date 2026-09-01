@@ -75,6 +75,11 @@ App web (HTML/CSS/JS puro, sem build) de Gantt hierárquico. Componentes:
 
 - **Acertos**: simular rollup no Node antes de editar; `node --check` após edições;
   remote canônico + provider generic para push; reverter rápido quando houve overreach.
+- **Esteira (datas da raiz "sem trava")**: a pedido do usuário, a raiz passou a ter
+  datas EDITÁVEIS (removido o botão travar/destravar e o flag `manual`). A edição manual
+  descarta o baseline do envelope (`resetRootBaseline`) e vira o novo "normal"; filha
+  que ultrapassa ainda faz o pai acompanhar — agora com AVISO (toast) ao salvar no modal
+  ou ao arrastar a barra. Regra início<=fim mantida; drag da barra da raiz liberado.
 - **Falhas**: `this._treeW()` dentro de função comum (quebrou todo drag de barra);
   push com 301 por URL remota errada; senha com `@` quebrando a URL; remoção não
   solicitada da regra do envelope; tracking ref desatualizada após push por URL manual.

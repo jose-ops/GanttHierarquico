@@ -123,6 +123,24 @@ window.GanttStore = (function () {
     })(null, 0);
     return out;
   }
+  /* Ancestral raiz ("pai de todos") de uma tarefa, ou null se a tarefa é raiz. */
+  function rootAncestorOf(id) {
+    let cur = findTask(id);
+    if (!cur || cur.parentId === null) return null;
+    while (cur.parentId !== null) {
+      cur = findTask(cur.parentId);
+      if (!cur) return null;
+    }
+    return cur;
+  }
+  /* Descarta o "normal" (baseline) do envelope da raiz para que uma edição manual
+     das datas da raiz se torne a nova base. Chamado ao editar datas da raiz
+     (modal ou drag); na próxima recompute o envelope re-captura o baseline. */
+  function resetRootBaseline(id) {
+    const r = rootAncestorOf(id) || findTask(id);
+    if (!r || r.parentId !== null || rootBaseline === null) return;
+    if (rootBaseline[r.id] !== undefined) delete rootBaseline[r.id];
+  }
   /* Recalcula datas/progresso usando computeEffective():
       - O progresso de TODO pai (raiz OU intermediário) é DERIVADO como MÉDIA SIMPLES
         das % de TODAS as suas filhas. Mover ou redimensionar datas NÃO altera a % do
@@ -134,7 +152,10 @@ window.GanttStore = (function () {
       - REGRA DO ENVELOPE (só cresce) no pai de todos:
          início  = recua SÓ SE uma filha iniciar antes do início atual do pai
          término = avança SÓ SE uma filha terminar após o término atual do pai
-       Mover uma filha para DENTRO do intervalo não altera o pai. */
+       Mover uma filha para DENTRO do intervalo não altera o pai.
+      - As DATAS da raiz são EDITÁVEIS (modal/drag): ao editar manualmente, o baseline
+        do envelope é descartado (resetRootBaseline) e a nova data vira o "normal".
+        Se uma filha ultrapassar esse normal, a raiz acompanha (envelope). */
   // datas ORIGINAIS (cadastradas no início) de cada pai raiz — base do envelope
   let rootBaseline = null;
   function recompute() {
@@ -180,10 +201,8 @@ window.GanttStore = (function () {
      // descendentes, para que ao alterar a % de uma filha (inclusive neta) todos os
      // pais acima reflitam a mudança. As datas dos pais intermediários continuam
      // manuais (podem ser arrastados); só a raiz deriva datas (com envelope).
-     // Raízes com vínculo DESTRAVADO (manual=true) mantêm datas/progresso manuais.
      tasks.forEach(p => {
        if (!hasChildren(p.id)) return;
-       if (p.manual) return;                      // destravado: mantém progresso manual
        const eff = computeEffective(p);
        p.progress = eff.progress;
      });
@@ -192,10 +211,10 @@ window.GanttStore = (function () {
      // UNIÃO do envelope inicial (capturado na 1ª vez = união das filhas, o "normal"
      // exibido) e das filhas atuais. Assim o pai acompanha quando uma filha ultrapassa,
      // mas VOLTA AO NORMAL quando a filha retorna para dentro do intervalo inicial
-     // (não fica "grudado" expandido). Raízes destravadas (manual) mantêm datas manuais.
+     // (não fica "grudado" expandido). Uma edição manual das datas da raiz descarta o
+     // baseline (resetRootBaseline) e vira o novo normal.
       (childrenMap['__root__'] || []).forEach(r => {
-        if (!hasChildren(r.id)) return;            // raiz sem filhas: mantém manual
-        if (r.manual) return;                      // destravado: não sobrescreve datas
+        if (!hasChildren(r.id)) return;            // raiz sem filhas: mantém datas manuais
         const eff = computeEffective(r);           // envelope de TODAS as filhas
         if (rootBaseline === null) rootBaseline = {};
         if (!rootBaseline[r.id]) {
@@ -244,6 +263,20 @@ window.GanttStore = (function () {
     })(id);
     return { total, outside, all: total > 0 ? outside === 0 : true };
   }
+  /* União das datas de TODAS as descendentes (não inclui o próprio nó).
+     Retorna { start, end } como Dates, ou null se não há descendentes. */
+  function descendantsRange(id) {
+    let min = null, max = null;
+    (function walk(i) {
+      children(i).forEach(c => {
+        const s = parseDate(c.start), e = parseDate(c.end);
+        if (!min || s < min) min = s;
+        if (!max || e > max) max = e;
+        if (hasChildren(c.id)) walk(c.id);
+      });
+    })(id);
+    return { start: min, end: max };
+  }
   function deleteTask(id) {
     snapshot();
     const toRemove = new Set();
@@ -261,8 +294,11 @@ window.GanttStore = (function () {
   function updateTask(id, data) {
     const t = findTask(id);
     if (!t) return;
+    const datesChanged = (data.start !== undefined && data.start !== t.start) || (data.end !== undefined && data.end !== t.end);
     snapshot();
     Object.assign(t, data);
+    // edição manual de datas de uma raiz vira o novo "normal" do envelope
+    if (datesChanged && t.parentId === null && hasChildren(t.id)) resetRootBaseline(t.id);
     notify();
   }
 
@@ -286,8 +322,9 @@ window.GanttStore = (function () {
     subscribe, notify,
     parseDate, fmt, addDays, addMonths, dayDiff, getRange,
     children, hasChildren, findTask, isDescendant, flatten, recompute,
+    rootAncestorOf, resetRootBaseline,
     reparent, nextId, deleteTask, addTask, updateTask, snapshot, undo,
-    descendantsWithinRange,
+    descendantsWithinRange, descendantsRange,
     getTasks, getDayWidth, setDayWidth,
     setDragTaskId, getDragTaskId,
     isScrollDone, markScrollDone, toggleCollapse,

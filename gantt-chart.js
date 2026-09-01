@@ -376,22 +376,6 @@
       const S = window.GanttStore;
       const chart = this;
       function startDrag(mode, e){
-        if(S.hasChildren(t.id) && t.parentId === null){
-          e.preventDefault();
-          // só avisa se o usuário de fato ARRASTAR (mover o mouse); um clique ou
-          // duplo-clique (para ver informações) não dispara o alerta.
-          const onFirstMove = () => {
-            chart._toast('As datas da Tarefa Pai são calculadas automaticamente a partir das Filhas.');
-            document.removeEventListener('mousemove', onFirstMove);
-          };
-          const cleanup = () => {
-            document.removeEventListener('mousemove', onFirstMove);
-            document.removeEventListener('mouseup', cleanup);
-          };
-          document.addEventListener('mousemove', onFirstMove);
-          document.addEventListener('mouseup', cleanup);
-          return;
-        }
         e.preventDefault(); e.stopPropagation();
         const startX = e.clientX;
         const origStart = S.parseDate(t.start);
@@ -438,6 +422,22 @@
             t.start = bar.dataset.pendingStart;
             t.end = bar.dataset.pendingEnd;
             delete bar.dataset.pendingStart; delete bar.dataset.pendingEnd;
+            // datas da raiz são editáveis: a edição vira o novo "normal" do envelope
+            if(S.hasChildren(t.id) && t.parentId === null) S.resetRootBaseline(t.id);
+            // tarefa filha/neta que ultrapassa a raiz: o pai acompanha (com aviso)
+            if(t.parentId !== null){
+              const root = S.rootAncestorOf(t.id);
+              if(root){
+                const rs = S.parseDate(root.start), re = S.parseDate(root.end);
+                const ss = S.parseDate(t.start), ee = S.parseDate(t.end);
+                const warns = [];
+                if(ss < rs) warns.push(`início (${t.start}) é anterior ao início (${root.start})`);
+                if(ee > re) warns.push(`fim (${t.end}) é posterior ao fim (${root.end})`);
+                if(warns.length){
+                  chart._toast('⚠️ O ' + warns.join(' e o ') + ` da Tarefa Pai “${root.name}”. O período do pai será ajustado para acompanhar.`);
+                }
+              }
+            }
             chart.renderChart();
           } 
         }
@@ -448,7 +448,7 @@
         if(S.hasChildren(t.id) && t.parentId === null){
           e.preventDefault();
           const onFirstMove = () => {
-            chart._toast('O progresso da Tarefa Pai é calculado automaticamente (média ponderada das Filhas).');
+            chart._toast('O progresso da Tarefa Pai é calculado automaticamente (média simples das Filhas).');
             document.removeEventListener('mousemove', onFirstMove);
           };
           const cleanup = () => {

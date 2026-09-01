@@ -366,9 +366,6 @@ gantt-toolbar{display:flex;}
 .rel-filter label{display:flex;align-items:center;gap:7px;font-weight:600;color:var(--ink);}
 .rel-filter select{font:inherit;padding:5px 9px;border:1px solid var(--border-strong);border-radius:8px;background:var(--surface);color:var(--ink);cursor:pointer;}
 
-/* linha do botão de configuração de vínculo (travar/destravar) no modal */
-.bind-row{margin:2px 0 10px;display:flex;}
-.bind-row .btn{width:100%;justify-content:center;}
 .child-msgs{margin-top:7px;padding-top:7px;border-top:1px solid var(--border);display:flex;flex-direction:column;gap:4px;}
 .child-msg{font-size:11.5px;color:var(--ink-soft);display:flex;align-items:center;gap:6px;}
 .child-msg .msg-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}

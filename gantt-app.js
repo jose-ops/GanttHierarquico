@@ -14,7 +14,7 @@
           <span><b>Arraste</b> uma tarefa pelo nome para vinculá-la como filha (solte na faixa
           <b>“Nível superior”</b> para desvincular). Na timeline, <b>arraste a barra</b> para mover datas, puxe as bordas
           para redimensionar e arraste o <b>knob branco</b> para alterar o progresso. O progresso das Tarefas Pai é
-          calculado automaticamente a partir das Filhas (média simples); as datas são livres, mas o pai acompanha
+          calculado automaticamente a partir de todas as tarefas descendentes (média simples); as datas são livres, mas o pai acompanha
           quando uma Filha ultrapassa o período (⚠). <b>Ctrl + scroll</b> dá zoom,
           <b>Ctrl + arrastar</b> move a timeline, <b>Ctrl + Z</b> desfaz e o botão <b>📍 Hoje</b> centraliza o dia atual.</span>
         </div>

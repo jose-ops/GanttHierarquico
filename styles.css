@@ -164,6 +164,7 @@ body{display:flex;flex-direction:column;overflow:hidden;}
   border:1.5px solid var(--surface);
 }
 .tree-cell .avatar.stacked{margin-left:-7px;}
+.tree-cell .avatar.more{background:var(--ink-faint);font-size:8px;}
 .unlink-btn{
   flex-shrink:0;width:18px;height:18px;border-radius:4px;border:none;background:transparent;color:var(--ink-faint);
   font-size:11px;cursor:pointer;display:flex;align-items:center;justify-content:center;opacity:0;
@@ -352,6 +353,7 @@ gantt-toolbar{display:flex;}
 .child-status{font-size:10.5px;font-weight:700;color:var(--accent);}
 .child-status.warn{color:var(--today);}
 .child-status.st-atrasado{color:#ef4444;}
+.child-status.st-pendente{color:#64748b;}
 .child-status.st-concluido{color:#22c55e;}
 .child-status.st-em_andamento{color:#f59e0b;}
 
@@ -360,12 +362,16 @@ gantt-toolbar{display:flex;}
 .rel-legend b{color:var(--ink);}
 .rel-legend .dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px;vertical-align:middle;}
 .rel-legend .dot.st-atrasado{background:#ef4444;}
+.rel-legend .dot.st-pendente{background:#64748b;}
 .rel-legend .dot.st-concluido{background:#22c55e;}
 .rel-legend .dot.st-em_andamento{background:#f59e0b;}
 .rel-filter{display:flex;align-items:center;gap:8px;margin-bottom:12px;font-size:12px;color:var(--ink-soft);}
 .rel-filter label{display:flex;align-items:center;gap:7px;font-weight:600;color:var(--ink);}
 .rel-filter select{font:inherit;padding:5px 9px;border:1px solid var(--border-strong);border-radius:8px;background:var(--surface);color:var(--ink);cursor:pointer;}
 
+/* linha do botão de configuração de vínculo (travar/destravar) no modal */
+.bind-row{margin:2px 0 10px;display:flex;}
+.bind-row .btn{width:100%;justify-content:center;}
 .child-msgs{margin-top:7px;padding-top:7px;border-top:1px solid var(--border);display:flex;flex-direction:column;gap:4px;}
 .child-msg{font-size:11.5px;color:var(--ink-soft);display:flex;align-items:center;gap:6px;}
 .child-msg .msg-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}

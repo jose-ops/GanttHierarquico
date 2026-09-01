@@ -229,6 +229,27 @@
         grid.appendChild(bar);
       });
 
+      // coluna de tarefas responsiva: a largura cresce conforme o conteúdo das linhas
+      // (indent + nome + avatares + botões), sem cortar nada; o nome é medido pelo seu
+      // scrollWidth porque ele corta/elipsa internamente (overflow:hidden).
+      if(S.isTreeVisible()){
+        let treeW = 360;
+        grid.querySelectorAll('.tree-cell').forEach(c=>{
+          const nm = c.querySelector('.name');
+          let w = 8; // padding-right
+          for(let i=0;i<c.children.length;i++){
+            const ch = c.children[i];
+            w += (ch === nm) ? nm.scrollWidth : ch.offsetWidth;
+          }
+          w += (c.children.length - 1) * 4; // gaps de 4px entre os filhos
+          treeW = Math.max(treeW, w);
+        });
+        const cap = Math.min(800, Math.max(360, Math.floor((this.clientWidth || window.innerWidth || 1200) * 0.55)));
+        treeW = Math.min(treeW, cap);
+        document.documentElement.style.setProperty('--tree-w', treeW + 'px');
+        this._updateTreeTogglePos();
+      }
+
       // linha do hoje
       if(todayIdx>=0 && todayIdx<numDays){
         const headerH = 28+28+34;
@@ -289,7 +310,7 @@
       tc.draggable = true;
       tc.dataset.id = t.id;
 
-      const indent = document.createElement('div'); indent.className='indent'; indent.style.width = (depth*18)+'px';
+      const indent = document.createElement('div'); indent.className='indent'; indent.style.width = Math.min(depth,5)*18 + 'px';
       const twisty = document.createElement('div');
       twisty.className = 'twisty' + (S.hasChildren(t.id)?'':' empty');
       twisty.textContent = S.hasChildren(t.id) ? (t.collapsed?'▸':'▾') : '';
@@ -330,11 +351,17 @@
 
       const assignees = Array.isArray(t.assignee) ? t.assignee : (t.assignee ? [t.assignee] : []);
       const avWrap = document.createElement('div'); avWrap.className='avatars';
-      assignees.forEach((a,i)=>{
+      assignees.slice(0,3).forEach((a,i)=>{
         const av = document.createElement('div'); av.className='avatar'+(i>0?' stacked':''); av.textContent=a; av.title=a;
         av.style.background = S.avatarColor(a);
         avWrap.appendChild(av);
       });
+      if(assignees.length > 3){
+        const more = document.createElement('div'); more.className='avatar stacked more';
+        more.textContent = '+' + (assignees.length - 3);
+        more.title = assignees.join(', ');
+        avWrap.appendChild(more);
+      }
       tc.appendChild(avWrap);
 
       // ações da linha
@@ -424,10 +451,10 @@
             delete bar.dataset.pendingStart; delete bar.dataset.pendingEnd;
             // datas da raiz são editáveis: a edição vira o novo "normal" do envelope
             if(S.hasChildren(t.id) && t.parentId === null) S.resetRootBaseline(t.id);
-            // tarefa filha/neta que ultrapassa a raiz: o pai acompanha (com aviso)
+            // tarefa filha/neta que ultrapassa a raiz TRAVADA: o pai acompanha (com aviso)
             if(t.parentId !== null){
               const root = S.rootAncestorOf(t.id);
-              if(root){
+              if(root && !root.manual){
                 const rs = S.parseDate(root.start), re = S.parseDate(root.end);
                 const ss = S.parseDate(t.start), ee = S.parseDate(t.end);
                 const warns = [];
@@ -445,10 +472,12 @@
         document.addEventListener('mouseup', onUp);
       }
       function startProgressDrag(e){
-        if(S.hasChildren(t.id) && t.parentId === null){
+        // só a RAIZ vinculada tem progresso derivado (bloqueado); pais intermediários
+        // e raízes destravadas têm % manual e podem usar o knob
+        if(S.hasChildren(t.id) && t.parentId === null && !t.manual){
           e.preventDefault();
           const onFirstMove = () => {
-            chart._toast('O progresso da Tarefa Pai é calculado automaticamente (média simples das Filhas).');
+            chart._toast('O progresso da Tarefa Pai é calculado automaticamente (média simples de todas as tarefas descendentes).');
             document.removeEventListener('mousemove', onFirstMove);
           };
           const cleanup = () => {

@@ -76,7 +76,14 @@ window.GanttStore = (function () {
   /* ---------- undo (pilha de snapshots) ---------- */
   let undoStack = [];
   function snapshot(){ undoStack.push(JSON.stringify(tasks)); if(undoStack.length>50) undoStack.shift(); }
-  function undo(){ if(!undoStack.length) return; tasks = JSON.parse(undoStack.pop()); notify(); }
+  function undo(){
+    if(!undoStack.length) return;
+    tasks = JSON.parse(undoStack.pop());
+    // descarta o baseline do envelope para que a recompute o re-capture a partir do
+    // estado restaurado (sem isso, desfazer a edição de datas de uma raiz não voltava)
+    rootBaseline = null;
+    notify();
+  }
 
   /* ---------- pub/sub (reatividade) ---------- */
   const subscribers = new Set();
@@ -96,6 +103,10 @@ window.GanttStore = (function () {
       if (!min || s < min) min = s;
       if (!max || e > max) max = e;
     });
+    if (min === null) {   // nenhuma tarefa: range seguro em torno de hoje
+      const today = new Date(); today.setHours(0, 0, 0, 0);
+      return { min: addDays(today, -30), max: addDays(today, 30) };
+    }
     min = addMonths(min, -2); max = addMonths(max, 2);
     return { min, max };
   }
@@ -142,10 +153,10 @@ window.GanttStore = (function () {
     if (rootBaseline[r.id] !== undefined) delete rootBaseline[r.id];
   }
   /* Recalcula datas/progresso usando computeEffective():
-      - O progresso de TODO pai (raiz OU intermediário) é DERIVADO como MÉDIA SIMPLES
-        das % de TODAS as suas filhas. Mover ou redimensionar datas NÃO altera a % do
-        pai; apenas mudar a % de uma folha (ex.: uma "neta") recalcula todos os pais
-        acima (intermediário e raiz).
+      - PROGRESSO: folhas e pais INTERMEDIÁRIOS são MANUAIS (a % de um pai
+        intermediário NÃO é derivada das % das filhas/netas — desvinculada). Só a RAIZ
+        ("pai de todos") deriva: média simples da % de TODAS as tarefas descendentes
+        (filhas, netas, tataranetas...), cada uma contando uma vez, em qualquer nível.
       - As DATAS dos pais intermediários continuam MANUAIS (podem ser arrastados); só a
         raiz deriva datas (com envelope). A raiz inclui as datas do pai intermediário no
         seu envelope, reagindo quando este é movido.
@@ -197,24 +208,28 @@ window.GanttStore = (function () {
       effective[node.id] = e; return e;
     }
 
-     // Deriva o progresso de TODOS os pais (raiz E intermediários) a partir dos
-     // descendentes, para que ao alterar a % de uma filha (inclusive neta) todos os
-     // pais acima reflitam a mudança. As datas dos pais intermediários continuam
-     // manuais (podem ser arrastados); só a raiz deriva datas (com envelope).
-     tasks.forEach(p => {
-       if (!hasChildren(p.id)) return;
-       const eff = computeEffective(p);
-       p.progress = eff.progress;
+     // Progresso: folhas e pais INTERMEDIÁRIOS são MANUAIS — a % de um pai
+     // intermediário NÃO deriva das % das filhas/netas (desvinculada). Só a RAIZ
+     // ("pai de todos") deriva: média simples da % de TODAS as tarefas descendentes
+     // (filhas, netas, tataranetas...), cada uma contando uma vez, em qualquer nível.
+     (childrenMap['__root__'] || []).forEach(r => {
+       if (!hasChildren(r.id) || r.manual) return;   // raiz sem filhas ou destravada: manual
+       const desc = [];
+       (function collect(i){ (childrenMap[i] || []).forEach(c => { desc.push(c); collect(c.id); }); })(r.id);
+       const sum = desc.reduce((s, t) => s + t.progress, 0);
+       r.progress = desc.length ? Math.max(0, Math.min(100, Math.round(sum / desc.length))) : r.progress;
      });
 
      // Aplica derivação de DATAS SOMENTE nas raízes ("pai de todos"). O envelope é a
      // UNIÃO do envelope inicial (capturado na 1ª vez = união das filhas, o "normal"
      // exibido) e das filhas atuais. Assim o pai acompanha quando uma filha ultrapassa,
      // mas VOLTA AO NORMAL quando a filha retorna para dentro do intervalo inicial
-     // (não fica "grudado" expandido). Uma edição manual das datas da raiz descarta o
-     // baseline (resetRootBaseline) e vira o novo normal.
+     // (não fica "grudado" expandido). Uma edição manual das datas da raiz TRAVADA
+     // descarta o baseline (resetRootBaseline) e vira o novo normal. Raízes destravadas
+     // (manual) mantêm datas manuais.
       (childrenMap['__root__'] || []).forEach(r => {
         if (!hasChildren(r.id)) return;            // raiz sem filhas: mantém datas manuais
+        if (r.manual) return;                      // destravado: não sobrescreve datas
         const eff = computeEffective(r);           // envelope de TODAS as filhas
         if (rootBaseline === null) rootBaseline = {};
         if (!rootBaseline[r.id]) {
@@ -288,6 +303,8 @@ window.GanttStore = (function () {
     snapshot();
     const nt = Object.assign({ id: nextId(), collapsed: false, messages: [] }, data);
     tasks.push(nt);
+    // expande o pai para a nova tarefa não nascer escondida em um grupo colapsado
+    if (nt.parentId !== null) { const p = findTask(nt.parentId); if (p) p.collapsed = false; }
     notify();
     return nt;
   }

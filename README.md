@@ -3,10 +3,10 @@
 
 Aplicação web (HTML/CSS/JS puro, sem build) de cronograma em Gantt hierárquico. As tarefas formam uma árvore de pai/filhas, e os pais agregam automaticamente o progresso e as datas das filhas (rollup). Principais recursos:
 
-Rollup automático: o progresso de todo pai é a média ponderada das folhas; a raiz deriva datas por envelope (só cresce quando uma filha ultrapassa o intervalo).
+Rollup automático: só a raiz ("pai de todos") deriva o progresso — média simples da % de todas as tarefas descendentes (filhas, netas, tataranetas); pais intermediários têm % manual (desvinculada das filhas). A raiz também deriva datas por envelope (só cresce quando uma filha ultrapassa o intervalo).
 Vínculo travável/destravável: a raiz pode ter vínculo travado (datas/progresso derivados das filhas) ou destravado (manuais).
 Edição visual: arrastar barras para mover datas, puxar bordas para redimensionar, arrastar e soltar para reparentar (inclusive no "nível superior" para desvincular), Ctrl+Z desfaz.
-Painel de relacionamentos: mostra filhas e descendentes da raiz, com regra de status por prioridade (Atrasado > Concluído > Em andamento) e filtro por status.
+Painel de relacionamentos: mostra filhas e descendentes da raiz, com regra de status por prioridade (Atrasado > Pendente > Concluído > Em andamento) e filtro por status.
 Mensagens e avisos por tarefa (info, aviso, perigo, sucesso).
 Navegação: zoom, botão "Hoje", FAB flutuante, Ctrl+Início.
 Sem backend nem banco: o estado vive em store.js (dados de exemplo no seed). 

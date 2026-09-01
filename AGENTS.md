@@ -9,8 +9,10 @@ retrospectiva da esteira estão na skill **gantt-dev**
 1. **Simule antes de editar**: para mudanças em `store.js` (rollup, datas),
    carregue o store no Node e verifique o comportamento atual primeiro.
 2. **Valide sintaxe**: `node --check <arquivo.js>` após cada edição de JS.
-3. **Rollup de %** = média simples das filhas. Mover/redimensionar NÃO muda a %
-   do pai; só mudar a % de uma folha recalcula.
+3. **Rollup de %**: só a RAIZ ("pai de todos") deriva — média simples da % de TODAS
+   as tarefas descendentes (filhas, netas, tataranetas...), cada uma contando uma vez.
+   Pais intermediários têm % MANUAL (desvinculada das filhas). Mover/redimensionar
+   datas NÃO muda a %.
 4. **Datas da raiz (envelope)**: o pai acompanha o filho que ultrapassa e volta
    ao normal quando o filho retorna. Não remover sem o usuário pedir.
 5. **`this` em funções comuns** dentro de `_attachBarDrag` NÃO é o componente:
